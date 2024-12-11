@@ -8,7 +8,6 @@ import {
   TableRow,
   TablePagination,
   Paper,
-  Button,
 } from "@mui/material";
 
 const ReusableTable = ({
@@ -28,14 +27,14 @@ const ReusableTable = ({
     <TableContainer
       component={Paper}
       sx={{
-        maxHeight: "500px",
-        overflowY: "auto",
+        maxHeight: "500px", // Vertical scroll
+        overflow: "auto", // Vertical + Horizontal scroll
         border: "1px solid #ddd",
         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
         ...tableStyle,
       }}
     >
-      <Table sx={{ minWidth: 650 }}>
+      <Table  sx={{ minWidth: 650 }}> {/* Enable sticky header for better UX */}
         <TableHead>
           <TableRow sx={{ backgroundColor: "#4db6ac" }}>
             {headers.map((header, index) => (
@@ -67,6 +66,7 @@ const ReusableTable = ({
                     key={cellIndex}
                     sx={{
                       border: "1px solid #ddd",
+                      whiteSpace: "nowrap", // Prevent text wrapping for horizontal scroll
                     }}
                   >
                     {onCellRender ? onCellRender(row, header) : row[header]}

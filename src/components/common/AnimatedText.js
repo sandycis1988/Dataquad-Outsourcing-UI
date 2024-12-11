@@ -9,8 +9,7 @@ const AnimatedText = () => {
 
   // List of 10 quotes
   const quotes = [
-    "Proven Partner With Right Software Solutions & IT Solutions",
-    "Innovation Distinguishes Between a Leader and a Follower",
+    
     "Empowering Your Digital Transformation Journey",
     "Turning Your Vision Into a Reality",
     "The Best Way to Predict the Future is to Create It",
@@ -59,7 +58,7 @@ const AnimatedText = () => {
               xs: '1.2rem', // Smaller on extra small screens
               sm: '1.5rem', // Small screens (like tablets)
               md: '2rem', // Medium screens (like laptops)
-              lg: '2.5rem', // Large screens
+              lg: '1.8rem', // Large screens
             },
             fontWeight: 300,
             opacity: 0,

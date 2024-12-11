@@ -21,66 +21,57 @@ const JobForm = () => {
     jobTitle: "",
     clientName: "",
     jobDescription: "",
-    jobType: "", // Set default value
+    jobType: "",
     location: "",
-    jobMode: "", // Set default value
+    jobMode: "",
     experienceRequired: "",
-    noticePeriod: "", // Set default value
+    noticePeriod: "",
     relevantExperience: "",
     qualification: "",
+    requirementAddedTimeStamp: "",
+    recruiterIds: [], // Initialize as an empty array
+    status: "Open", // Default value for status
+    remark: "",
   };
 
-  const [formData, setFormData] = useState( {
-    jobId: "",
-    jobTitle: "",
-    clientName: "",
-    jobDescription: "",
-    jobType: "", // Set default value
-    location: "",
-    jobMode: "", // Set default value
-    experienceRequired: "",
-    noticePeriod: "", // Set default value
-    relevantExperience: "",
-    qualification: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === "recruiterIds") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: typeof value === "string" ? value.split(",") : value, // Ensure recruiterIds is an array
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = () => {
-    fetch("http://192.168.0.148:9998/requirements/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset:UTF-8",
-        "Access-Control-Allow-Origin":"*"
-      },
-      mode:'no-cors',
-      body: JSON.stringify(formData), // Convert the formData object to JSON
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json(); // Parse the response as JSON
+    axios
+      .post("http://192.168.0.181:9998/requirements/add", formData, {
+        headers: {
+          "Content-Type": "application/json; charset=UTF-8",
+          "Access-Control-Allow-Origin": "*", // Make sure your server allows CORS
+        },
       })
-      .then((data) => {
-        console.log("Form submitted successfully:", data);
-        setFormData(initialFormData);
+      .then((response) => {
+        console.log("Form submitted successfully:", response.data);
+        setFormData(initialFormData); // Reset form after submission
+        window.location.reload();
       })
       .catch((error) => {
         console.error("Error submitting the form:", error);
-        
       });
   };
-  
 
   const handleClear = () => {
-    setFormData(initialFormData);
+    setFormData(initialFormData); // Reset form fields
   };
 
   const commonBorderStyles = {
@@ -89,8 +80,10 @@ const JobForm = () => {
     },
     "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
       borderColor: "black",
-      borderWidth: "2px",
+      borderWidth: "0.3px",
+      backgroundColor: "transparent",
     },
+
     "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
       borderColor: "black",
     },
@@ -107,6 +100,7 @@ const JobForm = () => {
         backgroundColor: "#FBFBFB",
         margin: { xs: 2, sm: 3, md: "auto" },
         border: 1,
+        boxShadow: 2,
       }}
     >
       <Typography
@@ -124,16 +118,29 @@ const JobForm = () => {
 
       {/* Grid layout for form fields */}
       <Grid container spacing={3}>
-        {[ 
-          { name: "jobId", label: "Job ID" },
-          { name: "jobTitle", label: "Job Title" },
-          { name: "clientName", label: "Client Name" },
-          { name: "location", label: "Location" },
+        {[
+          { name: "jobId", label: "Job ID", type: "text" },
+          { name: "jobTitle", label: "Job Title", type: "text" },
+          { name: "clientName", label: "Client Name", type: "text" },
+          { name: "location", label: "Location", type: "text" },
+          {
+            name: "experienceRequired",
+            label: "Experience Required",
+            type: "number",
+          },
+          {
+            name: "relevantExperience",
+            label: "Relevant Experience",
+            type: "number",
+          },
+          { name: "qualification", label: "Qualification", type: "text" },
+          { name: "remark", label: "Remark", type: "text" },
         ].map((field) => (
           <Grid item xs={12} sm={6} md={3} key={field.name}>
             <TextField
               fullWidth
               variant="outlined"
+              type={field.type}
               label={field.label}
               name={field.name}
               value={formData[field.name]}
@@ -143,6 +150,7 @@ const JobForm = () => {
           </Grid>
         ))}
 
+        {/* Job Type */}
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel sx={{ color: "black" }}>Job Type</InputLabel>
@@ -165,6 +173,7 @@ const JobForm = () => {
           </FormControl>
         </Grid>
 
+        {/* Job Mode */}
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel sx={{ color: "black" }}>Job Mode</InputLabel>
@@ -186,41 +195,6 @@ const JobForm = () => {
             </Select>
           </FormControl>
         </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Qualification"
-            name="qualification"
-            value={formData.qualification}
-            onChange={handleChange}
-            sx={commonBorderStyles}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Experience Required"
-            name="experienceRequired"
-            value={formData.experienceRequired}
-            onChange={handleChange}
-            sx={commonBorderStyles}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Relevant Experience"
-            name="relevantExperience"
-            value={formData.relevantExperience}
-            onChange={handleChange}
-            sx={commonBorderStyles}
-          />
-        </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel sx={{ color: "black" }}>Notice Period</InputLabel>
@@ -236,30 +210,101 @@ const JobForm = () => {
                 },
               }}
             >
-              <MenuItem value="1 month">1 month</MenuItem>
-              <MenuItem value="2 months">2 months</MenuItem>
-              <MenuItem value="3 months">3 months</MenuItem>
+              <MenuItem value="15">15 days</MenuItem>
+              <MenuItem value="30">30 days</MenuItem>
+              <MenuItem value="45">45 days</MenuItem>
+              <MenuItem value="60">60 days</MenuItem>
+              <MenuItem value="75">75 days</MenuItem>
+              <MenuItem value="90">90 days</MenuItem>
             </Select>
           </FormControl>
         </Grid>
 
-        <Grid item xs={12}>
+        {/* New Fields */}
+        <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
             variant="outlined"
-            label="Job Description"
-            name="jobDescription"
+            label="Requirement Added Timestamp"
+            name="requirementAddedTimeStamp"
+            type="datetime-local"
+            value={formData.requirementAddedTimeStamp}
+            onChange={handleChange}
+            sx={commonBorderStyles}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+
+        {/* Recruiter Ids */}
+
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            label="Job-Description"
+            name="remark"
             value={formData.jobDescription}
             onChange={handleChange}
             multiline
-            rows={4}
+            rows={3}
             sx={commonBorderStyles}
           />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth variant="outlined">
+            <InputLabel sx={{ color: "black" }}>Recruiter IDs</InputLabel>
+            <Select
+              multiple
+              name="recruiterIds"
+              value={formData.recruiterIds}
+              onChange={handleChange}
+              label="Recruiter IDs"
+              renderValue={(selected) => selected.join(", ")}
+              sx={{
+                ...commonBorderStyles,
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              <MenuItem value="DQIND01">DQIND01</MenuItem>
+              <MenuItem value="DQIND02">DQIND02</MenuItem>
+              <MenuItem value="DQIND03">DQIND03</MenuItem>
+              <MenuItem value="DQIND04">DQIND04</MenuItem>
+              <MenuItem value="DQIND05">DQIND05</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Status */}
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth variant="outlined">
+            <InputLabel sx={{ color: "black" }}>Status</InputLabel>
+            <Select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              label="Status"
+              sx={{
+                ...commonBorderStyles,
+                "&:hover": {
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              <MenuItem value="Open">Open</MenuItem>
+              <MenuItem value="Closed">Closed</MenuItem>
+              <MenuItem value="Pending">Pending</MenuItem>
+            </Select>
+          </FormControl>
         </Grid>
       </Grid>
 
       {/* Submit and Clear Buttons */}
-      <Grid container sx={{ marginTop: 3, justifyContent: "flex-end", alignItems: "end" }}>
+      <Grid
+        container
+        sx={{ marginTop: 3, justifyContent: "flex-end", alignItems: "end" }}
+      >
         <Grid item xs={12} sm={6} md={2}>
           <Button
             variant="contained"

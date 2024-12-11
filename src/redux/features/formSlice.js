@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import BASE_URL from "../apiConfig";
 
 // Async action for form submission
 // charset=UTF-8
@@ -9,21 +10,24 @@ export const submitFormData = createAsyncThunk(
     try {
       console.log("Sending form data:", formData); // Log the form data
       const response = await axios.post(
-        "http://192.168.0.148:9998/users/register",
+        `${BASE_URL}/users/register`,
         formData,
         {
 
           headers: {
             "Content-Type": "application/json", // Corrected the charset
-            "Access-Control-Allow-Origin": "*", // Allow cross-origin requests (though this should ideally be set server-side)
+           "Access-Control-Allow-Origin": "*", // Allow cross-origin requests (though this should ideally be set server-side)
           },
         }
       );
       console.log("API Response:", response.data); // Log the response data
       return response.data;
     } catch (error) {
-      console.error("Error submitting form:", error.response); // Log any errors
-      return rejectWithValue(error.response?.data?.fieldErrors || "Error submitting form");
+      console.error("Error submitting form:", error.response);
+      
+      // Extract the errorMessage from the API response if it exists
+      const errorMessage = error.response?.data?.error?.errorMessage || "Error submitting form";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -56,8 +60,8 @@ const initialState = {
     phoneNumber: "",
     designation: "",
     gender:'',
-    joiningDate:'',
-    dob:'',
+    joiningDate:null,
+    dob:null,
     roles: [], 
   },
 };
@@ -107,7 +111,16 @@ const formSlice = createSlice({
       })
       .addCase(submitFormData.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload;
+
+        // If the error contains an errorMessage, map it to the userId field (or any relevant field)
+        if (action.payload) {
+          if (action.payload.includes("userId already exists")) {
+            state.error.userId = action.payload;
+          }
+          // You can add additional field-specific checks here
+        } else {
+          state.error.general = "An unknown error occurred";
+        }
       });
   },
 });

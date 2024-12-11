@@ -1,15 +1,16 @@
-// src/slices/authSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import BASE_URL from "../apiConfig";
 
 // Initial state
 const initialState = {
   isAuthenticated: false,
   user: null,
-  roles: [],
-  logInTimeStamp:null,
-  status: "idle", // for tracking async request status (idle, loading, succeeded, failed)
-  error: null, // to store error messages if any
+  roles: [], // Store roles as an array
+  logInTimeStamp: null,
+  logoutTimestamp: null,
+  status: "idle", // For tracking async request status (idle, loading, succeeded, failed)
+  error: null, // To store error messages if any
 };
 
 // Async thunk for logging in
@@ -18,21 +19,27 @@ export const loginAsync = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "http://192.168.0.165:9998/auth/login",
-        { email, password }
+        `${BASE_URL}/users/login`, // Update with your actual login endpoint
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      // Extract roles (map to role names)
-      const roles = response.data.payload.roles.map((role) => role.name);
-      const logInTimeStamp = response.data.payload.loginTimestamp;
-      
-      // Return transformed payload
+      // Extract necessary data from the API response
+      const { userId, roleType, loginTimestamp } = response.data.payload;
+
+      // Return transformed data for Redux state
       return {
-        user: response.data.payload.userId,
-        roles,
-        logInTimeStamp,
+        isAuthenticated: true,
+        user: userId,
+        roles: [roleType], // Assuming roleType is a string, we place it in an array
+        logInTimeStamp: loginTimestamp,
       };
     } catch (error) {
+      // Handle errors from the API
       if (error.response) {
         if (error.response.status === 403) {
           return rejectWithValue("Your account is not authorized to log in.");
@@ -52,19 +59,25 @@ export const loginAsync = createAsyncThunk(
   }
 );
 
-
+// Async thunk for logging out
 export const logoutAsync = createAsyncThunk(
   "auth/logoutAsync",
   async (userId, { rejectWithValue }) => {
     try {
-      const logoutTimestamp = new Date().toISOString(); // Capture the current logout timestamp
-      await axios.post("http://192.168.0.149:9998/auth/logout", {
-        userId,
-        logoutTimestamp
-      });
+      // Log the user out via API
+      const response = await axios.put(
+        `${BASE_URL}/users/logout/${userId}`, // Update with your logout endpoint
 
-      return logoutTimestamp; // Return the logout timestamp for Redux state update
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return { userId };
     } catch (error) {
+      // Handle errors during logout
       if (error.response) {
         return rejectWithValue("Failed to log out. Please try again.");
       } else if (error.request) {
@@ -76,48 +89,58 @@ export const logoutAsync = createAsyncThunk(
   }
 );
 
-
-
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     logout: (state) => {
+      // Reset authentication-related data upon logout
       state.isAuthenticated = false;
       state.user = null;
-      state.roles = []; // Reset to empty array instead of null
+      state.roles = []; // Reset roles to empty array instead of null
+      state.logInTimeStamp = null;
+      state.logoutTimestamp = null;
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(loginAsync.pending, (state) => {
-      state.status = "loading";
-      state.error = null; // Clear any previous errors
-    });
     builder
+      // Handle login request pending state
+      .addCase(loginAsync.pending, (state) => {
+        state.status = "loading";
+        state.error = null; // Clear any previous errors
+      })
+      // Handle successful login (fulfilled state)
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.roles = action.payload.roles; // Save transformed roles
-        state.logInTimeStamp=action.payload.logInTimeStamp;
+        state.logInTimeStamp = action.payload.logInTimeStamp;
       })
+      // Handle login failure (rejected state)
       .addCase(loginAsync.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload; // Set the error message from the rejected action
         state.isAuthenticated = false;
       })
-
-      // logout api state updating
+      // Handle logout request pending state
       .addCase(logoutAsync.pending, (state) => {
         state.status = "loading";
       })
+      // Handle successful logout (fulfilled state)
       .addCase(logoutAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.logoutTimestamp = action.payload; // Set logout timestamp after successful logout
+        // Reset authentication-related data directly here
+        state.isAuthenticated = false;
+        state.user = null;
+        state.roles = [];
+        state.logInTimeStamp = null;
+        state.logoutTimestamp = action.payload.logoutTimestamp; // Set logout timestamp after successful logout
       })
+      // Handle logout failure (rejected state)
       .addCase(logoutAsync.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload;
+        state.error = action.payload; // Set the error message from the rejected action
       });
   },
 });

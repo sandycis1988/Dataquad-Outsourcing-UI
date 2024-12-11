@@ -11,10 +11,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import SignIn from "./SignIn";
 import SignUpFromLeftSide from "./SignUpFromLeftSide";
 import { useSelector, useDispatch } from "react-redux";
@@ -23,9 +24,11 @@ import {
   updateFormData,
   clearFormData,
 } from "../../redux/features/formSlice";
-import RegistrationSuccess from "./RegistrationSuccess";
+import { useNavigate } from "react-router-dom";
 
 const SignUpForm = () => {
+  const [showAlert, setShowAlert] = useState(false);
+  const navigate = useNavigate();
   const { status, error, response } = useSelector((state) => state.form || {});
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -42,52 +45,137 @@ const SignUpForm = () => {
     phoneNumber: "",
     designation: "",
     gender: "",
-    joinigDate: "",
+    joiningDate: "",
     dob: "",
 
-    roles: ['EMPLOYEE'],
+    roles: ["EMPLOYEE"],
   });
 
+  const [touchedFields, setTouchedFields] = useState({});
   const [formError, setFormError] = useState({});
 
+  // Validation regex
+  // const userIdRegex = /^DQIND\d{2,4}$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@dataqinc\.com$/;
-  const phoneRegex = /^[0-9]{10}$/; // Assuming phone number is 10 digits
+  const phoneRegex = /^[0-9]{10}$/;
+  const passwordRegex =
+    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   // Custom validation functions
-  const validateEmail = (email) => {
-    return emailRegex.test(email)
+  const validateUserId = (userId) => {
+    const userIdRegex = /^DQIND\d{2,4}$/; // Ensures the ID starts with "DQIND" followed by 2 to 4 digits
+    return userIdRegex.test(userId)
+      ? ""
+      : "User ID must start with 'DQIND' followed by 2 to 4 digits";
+  };
+
+  const validateUserName = (userName) =>
+    userName.length <= 20 ? "" : "User Name must not exceed 20 characters";
+
+  const validateEmail = (email) =>
+    emailRegex.test(email)
       ? ""
       : "Please enter a valid email (example@dataqinc.com)";
+
+  const validatePhoneNumber = (phoneNumber) =>
+    phoneRegex.test(phoneNumber) ? "" : "Phone number must be 10 digits";
+
+  const validateGender = (gender) => (gender ? "" : "Please select a gender");
+
+  const validateDOB = (dob) => {
+    if (!dob) return "Date of birth is required"; // Check if DOB is empty
+
+    const today = new Date();
+    const birthDate = new Date(dob);
+
+    if (birthDate > today) return "Date of birth cannot be in the future";
+
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDifference < 0 ||
+      (monthDifference === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return "";
   };
 
-  const validatePhoneNumber = (phoneNumber) => {
-    return phoneRegex.test(phoneNumber) ? "" : "Phone number must be 10 digits";
+  const validateJoiningDate = (joiningDate, dob) => {
+    if (!joiningDate) return "Joining date is required";
+    const birthDate = new Date(dob);
+    const joinDate = new Date(joiningDate);
+    if (joinDate <= birthDate) {
+      return "Joining date must be after date of birth";
+    }
+    return "";
   };
 
-  const validatePassword = (password) => {
-    return password.length >= 6 ? "" : "Password must be at least 6 characters";
-  };
-
-  const validateConfirmPassword = (confirmPassword) => {
-    return confirmPassword === formData.password
+  const validatePassword = (password) =>
+    passwordRegex.test(password)
       ? ""
-      : "Passwords do not match";
+      : "Password must be at least 8 characters, include uppercase, lowercase, digit, and special character";
+
+  const validateConfirmPassword = (confirmPassword) =>
+    confirmPassword === formData.password ? "" : "Passwords do not match";
+
+
+
+  const validateField = (name, value) => {
+    switch (name) {
+      case "userId":
+        return validateUserId(value);
+      case "userName":
+        return validateUserName(value);
+      case "email":
+        return validateEmail(value);
+      case "phoneNumber":
+        return validatePhoneNumber(value);
+      case "gender":
+        return validateGender(value);
+      case "dob":
+        return validateDOB(value);
+        case "joinigDate":
+          return validateJoiningDate(value)
+      case "password":
+        return validatePassword(value);
+      case "confirmPassword":
+        return validateConfirmPassword(value);
+      case "joiningDate":
+        return value ? "" : "Joining Date is required";
+      default:
+        return "";
+    }
   };
 
   useEffect(() => {
     if (status === "failed" && error) {
-      // If API response error exists, map those errors to formError state
-      const apiErrors = error.errors || {}; // Assuming error contains a field `errors` with the API validation errors
-      setFormError(apiErrors);
+      const apiErrors = {};
+      if (error.message === "userId already exists") {
+        apiErrors.userId = "User ID already exists";
+      }
+      setFormError(apiErrors); // Set the error state from API response
     }
   }, [status, error]);
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
+    setFormError((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // For other fields, simply update the state as usual
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
+
+    // Dispatch the updated value
     dispatch(updateFormData({ name, value }));
   };
 
@@ -99,46 +187,88 @@ const SignUpForm = () => {
   //   dispatch(updateFormData({ name: "roles", value: [selectedRole] }));
   // };
 
+  // Handle form submission
+
+  const handleJoiningDateChange = (event) => {
+    const joiningDate = event.target.value;
+    const dob = formData.dob; // Get the date of birth from the form data
+    const error = validateJoiningDate(joiningDate, dob);
+  
+    setFormError((prev) => ({
+      ...prev,
+      joiningDate: error, // Update the error state for the joining date field
+    }));
+  
+    // Update the formData as well
+    setFormData((prevData) => ({
+      ...prevData,
+      joiningDate: joiningDate,
+    }));
+  };
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    let errors = {};
-    errors.email = validateEmail(formData.email);
-    errors.phoneNumber = validatePhoneNumber(formData.phoneNumber);
-    errors.password = validatePassword(formData.password);
-    errors.confirmPassword = validateConfirmPassword(formData.confirmPassword);
+    const errors = {
+      userId: validateUserId(formData.userId),
+      userName: validateUserName(formData.userName),
+      email: validateEmail(formData.email),
+      phoneNumber: validatePhoneNumber(formData.phoneNumber),
+      gender: validateGender(formData.gender),
+      dob: validateDOB(formData.dob),
+      joiningDate: validateJoiningDate(formData.joiningDate, formData.dob), 
+      password: validatePassword(formData.password),
+      confirmPassword: validateConfirmPassword(formData.confirmPassword),
+    };
 
-    // Check if there are any errors
     if (Object.values(errors).some((error) => error !== "")) {
-      setFormError(errors); // Set form validation errors
+      setFormError(errors);
       return;
     }
 
-    // Submit form data to Redux or API
-
-    console.log("form data log ",formData);
-    
     dispatch(submitFormData(formData));
     dispatch(clearFormData());
   };
+
+  // Clear the form
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleClickShowConfirmPassword = () =>
     setShowConfirmPassword(!showConfirmPassword);
 
-  if (status === "succeeded" && response) {
-    return (
-      <RegistrationSuccess
-        message={response.message}
-        email={response.data.email}
-        userId={response.data.userId}
-      />
-    );
-  }
+  // timer for the registration success message
+  useEffect(() => {
+    if (status === "succeeded" && response) {
+      setShowAlert(true);
 
-  const handleClear = ()=>{
+      setFormData({
+        userId: "",
+        userName: "",
+        password: "",
+        confirmPassword: "",
+        email: "",
+        personalemail: "",
+        phoneNumber: "",
+        designation: "",
+        gender: "",
+        joiningDate: "",
+        dob: "",
+        roles: [],
+      });
 
-    dispatch(clearFormData())
+      const timer = setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
+      navigate("/");
+      return () => clearTimeout(timer);
+    }
+  }, [status, response]);
+
+  const isFormValid = Object.values(formError).every((error) => error === "");
+
+  const handleClear = () => {
+    dispatch(clearFormData());
     setFormData({
       userId: "",
       userName: "",
@@ -149,13 +279,13 @@ const SignUpForm = () => {
       phoneNumber: "",
       designation: "",
       gender: "",
-      joinigDate: "",
+      joiningDate: "",
       dob: "",
       roles: [],
     });
 
     setFormError({});
-  }
+  };
 
   return (
     <Grid container style={{ height: "100vh" }}>
@@ -166,6 +296,7 @@ const SignUpForm = () => {
         md={6}
         sx={{
           position: "relative",
+
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -185,6 +316,7 @@ const SignUpForm = () => {
         sx={{
           display: "flex",
           alignItems: "center",
+
           justifyContent: "center",
           position: "relative",
         }}
@@ -204,6 +336,12 @@ const SignUpForm = () => {
             <SignIn />
           ) : (
             <>
+              {showAlert && status === "succeeded" && response && (
+                <Alert severity="success">
+                  Registration Successful! User ID: {response.data?.userId},
+                  Email:{response.data?.email}
+                </Alert>
+              )}
               <Typography
                 variant="h4"
                 component="h1"
@@ -218,150 +356,223 @@ const SignUpForm = () => {
               </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
-                  {/* Form Fields */}
-                  {[
-                    { label: "User ID", name: "userId", type: "text" },
-                    { label: "User Name", name: "userName", type: "text" },
-                    { label: "Email", name: "email", type: "email" },
-                    {
-                      label: "Personal Email",
-                      name: "personalemail",
-                      type: "email",
-                    },
-                    { label: "Phone Number", name: "phoneNumber", type: "tel" },
-                    { label: "Designation", name: "designation", type: "text" },
-                  ].map((field, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
-                      <TextField
-                        label={field.label}
-                        name={field.name}
-                        type={field.type}
-                        value={formData[field.name]}
-                        onChange={handleChange}
-                        fullWidth
-                        error={Boolean(formError[field.name] || null)} // Show error if custom or API error exists
-                        helperText={formError[field.name] || null}
-                      />
-                    </Grid>
-                  ))}
-                  {/* Roles */}
-                  {/* <Grid item xs={12}  md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel id="role-select-label">Role</InputLabel>
-                      <Select
-                        labelId="role-select-label"
-                        name="roles"
-                        value={formData.roles}
-                        onChange={(e) => handleRoleChange(e.target.value)}
-                        label="Role"
-                        fullWidth
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
-                          },
-                        }}
-                      >
-                        <MenuItem value="ADMIN">ADMIN</MenuItem>
-                        <MenuItem value="EMPLOYEE">EMPLOYEE</MenuItem>
-                        <MenuItem value="SUPERADMIN">SUPERADMIN</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid> */}
-                  {/* Geneder fields */}
+                  {/* User ID Field */}
                   <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="User ID"
+                      name="userId"
+                      type="text"
+                      value={formData.userId}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.userId}
+                      helperText={formError.userId}
+                    />
+                  </Grid>
+
+                  {/* User Name Field */}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="User Name"
+                      name="userName"
+                      type="text"
+                      value={formData.userName}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.userName}
+                      helperText={formError.userName}
+                    />
+                  </Grid>
+
+                  {/* Email Field */}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.email}
+                      helperText={formError.email}
+                    />
+                  </Grid>
+
+                  {/* Personal Email Field */}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Personal Email"
+                      name="personalemail"
+                      type="email"
+                      value={formData.personalemail}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.personalemail}
+                      helperText={formError.personalemail}
+                    />
+                  </Grid>
+
+                  {/* Phone Number Field */}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Phone Number"
+                      name="phoneNumber"
+                      type="number"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.phoneNumber}
+                      helperText={formError.phoneNumber}
+                    />
+                  </Grid>
+
+                  {/* Designation Field */}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Designation"
+                      name="designation"
+                      type="text"
+                      value={formData.designation}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.designation}
+                      helperText={formError.designation}
+                    />
+                  </Grid>
+
+                  {/* Gender Field */}
+                  <Grid item xs={12} md={6}>
                     <FormControl fullWidth>
-                      <InputLabel id="gender-select-label">Gender</InputLabel>
+                      <InputLabel>Gender</InputLabel>
                       <Select
-                        labelId="gender-select-label"
-                        name="gender"
                         value={formData.gender}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         label="Gender"
+                        name="gender"
+                        error={!!formError.gender}
                       >
                         <MenuItem value="Male">Male</MenuItem>
                         <MenuItem value="Female">Female</MenuItem>
                       </Select>
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ display: "block" }}
+                      >
+                        {formError.gender}
+                      </Typography>
                     </FormControl>
                   </Grid>
-                    {/* joining Date */}
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Joining Date"
-                      name="joinigDate" // Corrected the typo from "joinigData" to "joiningData"
-                      type="date"
-                      value={formData.joinigDate}
-                      onChange={handleChange}
-                      fullWidth
-                      InputLabelProps={{
-                        shrink: true, // Ensures the label is always above the date field
-                      }}
-                      error={!!formError.joinigDate}
-                      helperText={formError.joinigDate}
-                    />
-                  </Grid>
 
-                  {/* Date of Birth */}
-                  <Grid item xs={12} sm={6}>
+                  {/* Date of Birth Field */}
+                  <Grid item xs={12} md={6}>
                     <TextField
                       label="Date of Birth"
                       name="dob"
                       type="date"
                       value={formData.dob}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       fullWidth
-                      InputLabelProps={{
-                        shrink: true, // Ensures the label is always above the date field
-                      }}
                       error={!!formError.dob}
                       helperText={formError.dob}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
                     />
                   </Grid>
-                  {/* Password Fields */}
-                  {[
-                    {
-                      label: "Password",
-                      name: "password",
-                      value: formData.password,
-                      show: showPassword,
-                      toggleShow: handleClickShowPassword,
-                    },
-                    {
-                      label: "Confirm Password",
-                      name: "confirmPassword",
-                      value: formData.confirmPassword,
-                      show: showConfirmPassword,
-                      toggleShow: handleClickShowConfirmPassword,
-                    },
-                  ].map((field, index) => (
-                    <Grid item xs={12} sm={6} key={index}>
-                      <TextField
-                        label={field.label}
-                        name={field.name}
-                        type={field.show ? "text" : "password"}
-                        value={field.value}
-                        onChange={handleChange}
-                        error={Boolean(formError[field.name] || null)} // Show error if custom or API error exists
-                        helperText={formError[field.name] || ""}
-                        fullWidth
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton onClick={field.toggleShow} edge="end">
-                                {field.show ? (
-                                  <VisibilityOff />
-                                ) : (
-                                  <Visibility />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
+
+                  {/* Joining Date Field */}
+                  <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Joining Date"
+                    name="joiningDate"
+                    type="date"
+                    value={formData.joiningDate}
+                    onChange={handleJoiningDateChange}
+                    onBlur={handleBlur} // Optional: You can also validate on blur
+                    error={!!formError.joiningDate} // Show error if any
+                    helperText={formError.joiningDate} // Display error message
+                    fullWidth
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
                     </Grid>
-                  ))}
+                  {/* Password Field */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="Password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.password}
+                      helperText={formError.password}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={handleClickShowPassword}>
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+
+                  {/* Confirm Password Field */}
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="Confirm Password"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      fullWidth
+                      error={!!formError.confirmPassword}
+                      helperText={formError.confirmPassword}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={handleClickShowConfirmPassword}
+                            >
+                              {showConfirmPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
                 </Grid>
+
+                {/* Submit and Clear Buttons */}
                 <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-                  <Button type="submit" variant="contained" color="primary">
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={!isFormValid}
+                  >
                     Register
                   </Button>
                   <Button
@@ -380,19 +591,18 @@ const SignUpForm = () => {
         {/* Toggle Login/Register */}
         <Box sx={{ position: "absolute", top: "8px", right: "8px" }}>
           <Button
-            variant="outlined"
+            variant="contained"
             color="primary"
             onClick={() => setIsSignIn(!isSignIn)}
             sx={{
               display: "flex",
               alignItems: "center",
               fontSize: { xs: "0.8rem", sm: "1rem" },
-              padding: { xs: "4px 8px", sm: "6px 12px" },
+              fontWeight:'200',
+              padding: { xs: "4px 8px", md: "6px 12px" },
             }}
           >
-            <ArrowBackIosNewIcon
-              sx={{ fontSize: { xs: "14px", sm: "16px" }, marginRight: "4px" }}
-            />
+           <PersonAddIcon />
             {isSignIn ? "Register" : "Login"}
           </Button>
         </Box>

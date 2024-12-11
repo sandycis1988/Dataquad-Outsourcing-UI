@@ -5,8 +5,10 @@ import { useSelector } from "react-redux";
 const ProtectedRoute = ({ children, role }) => {
   const { isAuthenticated, roles } = useSelector((state) => state.auth);
 
-  console.log('User Roles:', roles);
-  console.log('Is Authenticated:', isAuthenticated);
+  console.log('User Roles----:', roles);
+  console.log('role -------',role);
+  
+  console.log('Is Authenticated-----:', isAuthenticated);
 
   // Check if the user is authenticated and has the required role
   const hasAccess = isAuthenticated && roles.includes(role);

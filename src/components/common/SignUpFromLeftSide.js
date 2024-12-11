@@ -2,7 +2,7 @@ import { Box, Typography, Grid } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import AnimatedText from "./AnimatedText";
 import React from "react";
-import logo from "../../assets/1692036821878.jpg";
+import logo from "../../assets/logo-01.png";
 
 const SignUpFromLeftSide = () => {
   const theme = useTheme();
@@ -48,7 +48,7 @@ const SignUpFromLeftSide = () => {
           />
         </Box>
 
-        <Box sx={{ mb: 2, maxWidth: "100%", width: "auto" }}>
+        <Box sx={{ mb: 2, maxWidth: "60%", width: "auto" }}>
           <img
             src={logo}
             alt="Logo"
@@ -67,19 +67,7 @@ const SignUpFromLeftSide = () => {
           />
         </Box>
         
-        <Typography
-          variant="h2"
-          gutterBottom
-          sx={{
-            color: theme.palette.text.main,
-            fontSize: "3rem", // Ensures it's large on bigger screens
-            "@media (max-width:600px)": {
-              fontSize: "2rem", // Smaller on mobile
-            },
-          }}
-        >
-          Dataquad.inc
-        </Typography>
+        
         
         <AnimatedText />
 

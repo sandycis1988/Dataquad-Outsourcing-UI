@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import ReusableTable from "../ReusableTable";
 
-const Planned = () => {
+const Bench = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  // Example data for Planned
+  // Example data for Bench
   const requirementsList = [
     { id: 1, task: "Interview Scheduling", owner: "Admin", deadline: "2024-12-10" },
     { id: 2, task: "Profile Sourcing", owner: "John Doe", deadline: "2024-12-15" },
@@ -41,4 +41,4 @@ const Planned = () => {
   );
 };
 
-export default Planned;
+export default Bench;
