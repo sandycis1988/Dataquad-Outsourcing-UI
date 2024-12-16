@@ -4,6 +4,7 @@ import formReducer from './features/formSlice'
 import authReducer from './features/authSlice'
 import forgotPasswordReducer from './features/forgotPasswordSlice'
 import employeeReducer from './features/employeeSlice'
+import jobFormReducer from '../redux/features/jobFormSlice';
 
 
 export const store = configureStore({
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authReducer,
     forgotPassword: forgotPasswordReducer,
     employee: employeeReducer,
+    jobForm: jobFormReducer,
 
   },
 });

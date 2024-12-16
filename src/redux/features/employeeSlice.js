@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import BASE_URL from '../apiConfig';
 
 // Async thunk to simulate submitting employee data
 export const submitEmployeeData = createAsyncThunk(
@@ -6,7 +7,7 @@ export const submitEmployeeData = createAsyncThunk(
   async (employeeData, { rejectWithValue }) => {
     try {
       // Simulate an API request (replace with actual API URL)
-      const response = await fetch('/api/employee', {
+      const response = await fetch(`${BASE_URL}/users/register`, {
         method: 'POST',
         body: JSON.stringify(employeeData),
         headers: { 'Content-Type': 'application/json' },

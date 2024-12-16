@@ -35,7 +35,7 @@ export const loginAsync = createAsyncThunk(
       return {
         isAuthenticated: true,
         user: userId,
-        roles: [roleType], // Assuming roleType is a string, we place it in an array
+        roles: roleType ? [roleType] : [], // Ensure roles is always an array
         logInTimeStamp: loginTimestamp,
       };
     } catch (error) {
@@ -65,9 +65,9 @@ export const logoutAsync = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       // Log the user out via API
-      const response = await axios.put(
+      await axios.put(
         `${BASE_URL}/users/logout/${userId}`, // Update with your logout endpoint
-
+        null,
         {
           headers: {
             "Content-Type": "application/json",
@@ -75,9 +75,9 @@ export const logoutAsync = createAsyncThunk(
         }
       );
 
-      return { userId };
+      // Return userId for additional state updates if needed
+      return { logoutTimestamp: new Date().toISOString() };
     } catch (error) {
-      // Handle errors during logout
       if (error.response) {
         return rejectWithValue("Failed to log out. Please try again.");
       } else if (error.request) {
@@ -93,57 +93,60 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    // Reset the state for manual logout
     logout: (state) => {
-      // Reset authentication-related data upon logout
       state.isAuthenticated = false;
       state.user = null;
-      state.roles = []; // Reset roles to empty array instead of null
+      state.roles = [];
       state.logInTimeStamp = null;
       state.logoutTimestamp = null;
+      state.error = null;
+      state.status = "idle";
     },
   },
   extraReducers: (builder) => {
     builder
-      // Handle login request pending state
+      // Handle login request (pending)
       .addCase(loginAsync.pending, (state) => {
         state.status = "loading";
-        state.error = null; // Clear any previous errors
+        state.error = null; // Clear previous errors
       })
-      // Handle successful login (fulfilled state)
+      // Handle successful login (fulfilled)
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.roles = action.payload.roles; // Save transformed roles
+        state.roles = action.payload.roles;
         state.logInTimeStamp = action.payload.logInTimeStamp;
       })
-      // Handle login failure (rejected state)
+      // Handle failed login (rejected)
       .addCase(loginAsync.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload; // Set the error message from the rejected action
+        state.error = action.payload;
         state.isAuthenticated = false;
       })
-      // Handle logout request pending state
+      // Handle logout request (pending)
       .addCase(logoutAsync.pending, (state) => {
         state.status = "loading";
+        state.error = null; // Clear previous errors
       })
-      // Handle successful logout (fulfilled state)
+      // Handle successful logout (fulfilled)
       .addCase(logoutAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
-        // Reset authentication-related data directly here
         state.isAuthenticated = false;
         state.user = null;
         state.roles = [];
         state.logInTimeStamp = null;
-        state.logoutTimestamp = action.payload.logoutTimestamp; // Set logout timestamp after successful logout
+        state.logoutTimestamp = action.payload.logoutTimestamp;
       })
-      // Handle logout failure (rejected state)
+      // Handle failed logout (rejected)
       .addCase(logoutAsync.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload; // Set the error message from the rejected action
+        state.error = action.payload;
       });
   },
 });
 
+// Export the reducer and actions
 export const { logout } = authSlice.actions;
 export default authSlice.reducer;

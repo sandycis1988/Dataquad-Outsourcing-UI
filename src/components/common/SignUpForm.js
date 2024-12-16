@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import SignIn from "./SignIn";
 import SignUpFromLeftSide from "./SignUpFromLeftSide";
 import { useSelector, useDispatch } from "react-redux";
@@ -25,6 +25,7 @@ import {
   clearFormData,
 } from "../../redux/features/formSlice";
 import { useNavigate } from "react-router-dom";
+import LoginIcon from '@mui/icons-material/Login';
 
 const SignUpForm = () => {
   const [showAlert, setShowAlert] = useState(false);
@@ -84,22 +85,22 @@ const SignUpForm = () => {
 
   const validateDOB = (dob) => {
     if (!dob) return "Date of birth is required"; // Check if DOB is empty
-
-    const today = new Date();
-    const birthDate = new Date(dob);
-
+  
+    let today = new Date();
+    let birthDate = new Date(dob);
+  
     if (birthDate > today) return "Date of birth cannot be in the future";
-
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-
+  
+    let age = today.getFullYear() - birthDate.getFullYear();
+    let monthDifference = today.getMonth() - birthDate.getMonth();
+  
     if (
       monthDifference < 0 ||
       (monthDifference === 0 && today.getDate() < birthDate.getDate())
     ) {
       age--;
     }
-
+  
     return "";
   };
 
@@ -121,8 +122,6 @@ const SignUpForm = () => {
   const validateConfirmPassword = (confirmPassword) =>
     confirmPassword === formData.password ? "" : "Passwords do not match";
 
-
-
   const validateField = (name, value) => {
     switch (name) {
       case "userId":
@@ -137,8 +136,8 @@ const SignUpForm = () => {
         return validateGender(value);
       case "dob":
         return validateDOB(value);
-        case "joinigDate":
-          return validateJoiningDate(value)
+      case "joinigDate":
+        return validateJoiningDate(value);
       case "password":
         return validatePassword(value);
       case "confirmPassword":
@@ -193,19 +192,18 @@ const SignUpForm = () => {
     const joiningDate = event.target.value;
     const dob = formData.dob; // Get the date of birth from the form data
     const error = validateJoiningDate(joiningDate, dob);
-  
+
     setFormError((prev) => ({
       ...prev,
       joiningDate: error, // Update the error state for the joining date field
     }));
-  
+
     // Update the formData as well
     setFormData((prevData) => ({
       ...prevData,
       joiningDate: joiningDate,
     }));
   };
-
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -217,7 +215,7 @@ const SignUpForm = () => {
       phoneNumber: validatePhoneNumber(formData.phoneNumber),
       gender: validateGender(formData.gender),
       dob: validateDOB(formData.dob),
-      joiningDate: validateJoiningDate(formData.joiningDate, formData.dob), 
+      joiningDate: validateJoiningDate(formData.joiningDate, formData.dob),
       password: validatePassword(formData.password),
       confirmPassword: validateConfirmPassword(formData.confirmPassword),
     };
@@ -227,8 +225,12 @@ const SignUpForm = () => {
       return;
     }
 
-    dispatch(submitFormData(formData));
-    dispatch(clearFormData());
+    try {
+      dispatch(submitFormData(formData));
+      dispatch(clearFormData());
+    } catch (error) {
+      console.error("Submission failed: ", error);
+    }
   };
 
   // Clear the form
@@ -259,11 +261,12 @@ const SignUpForm = () => {
 
       const timer = setTimeout(() => {
         setShowAlert(false);
+        dispatch(clearFormData())
       }, 3000);
       navigate("/");
       return () => clearTimeout(timer);
     }
-  }, [status, response]);
+  }, [status, response,navigate]);
 
   const isFormValid = Object.values(formError).every((error) => error === "");
 
@@ -338,8 +341,8 @@ const SignUpForm = () => {
             <>
               {showAlert && status === "succeeded" && response && (
                 <Alert severity="success">
-                  Registration Successful! User ID: {response.data?.userId},
-                  Email:{response.data?.email}
+                  Registration Successful! User ID: {response.data.userId},
+                  Email:{response.data.email}
                 </Alert>
               )}
               <Typography
@@ -349,10 +352,11 @@ const SignUpForm = () => {
                 align="center"
                 sx={{
                   color: theme.palette.text.primary,
-                  fontSize: { xs: "1.8rem", sm: "2.5rem", md: "3rem" },
+                  fontSize: { xs: "1rem", sm: "1.5rem", md: "2rem" },
+                  
                 }}
               >
-                Employee Sign-Up
+                Sign up
               </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
@@ -491,21 +495,21 @@ const SignUpForm = () => {
 
                   {/* Joining Date Field */}
                   <Grid item xs={12} md={6}>
-                  <TextField
-                    label="Joining Date"
-                    name="joiningDate"
-                    type="date"
-                    value={formData.joiningDate}
-                    onChange={handleJoiningDateChange}
-                    onBlur={handleBlur} // Optional: You can also validate on blur
-                    error={!!formError.joiningDate} // Show error if any
-                    helperText={formError.joiningDate} // Display error message
-                    fullWidth
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                    </Grid>
+                    <TextField
+                      label="Joining Date"
+                      name="joiningDate"
+                      type="date"
+                      value={formData.joiningDate}
+                      onChange={handleJoiningDateChange}
+                      onBlur={handleBlur} // Optional: You can also validate on blur
+                      error={!!formError.joiningDate} // Show error if any
+                      helperText={formError.joiningDate} // Display error message
+                      fullWidth
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </Grid>
                   {/* Password Field */}
                   <Grid item xs={12} md={6}>
                     <TextField
@@ -597,13 +601,20 @@ const SignUpForm = () => {
             sx={{
               display: "flex",
               alignItems: "center",
-              fontSize: { xs: "0.8rem", sm: "1rem" },
-              fontWeight:'200',
+              fontSize: { xs: "0.8rem", md: "1rem" },
+              fontWeight: "200",
               padding: { xs: "4px 8px", md: "6px 12px" },
             }}
           >
-           <PersonAddIcon />
-            {isSignIn ? "Register" : "Login"}
+            {isSignIn ? (
+              <>
+                <PersonAddIcon fontSize="small" sx={{ marginRight: "2px", padding: "2px" }}  /> Register
+              </>
+            ) : (
+              <>
+                <LoginIcon fontSize="small" sx={{ marginRight: "2px", padding: "2px" }} /> LogIn
+              </>
+            )}
           </Button>
         </Box>
       </Grid>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -9,29 +9,30 @@ import {
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@emotion/react";
 import { logoutAsync } from "../redux/features/authSlice";
+
+// Components
 import Requirements from "../components/Requirements/Requirements";
 import Submissions from "../components/Tabs/Submissions";
 import Planned from "../components/Tabs/Planned";
 import Bench from "../components/Tabs/Bench";
 import Assigned from "../components/Tabs/Assigned";
 import AddUser from "../components/Tabs/AddUser";
-import Header from "../components/Header"; // Import the separate Header
-import logo from "../assets/logo-01.png";
+import Header from "../components/Header";
 import JobForm from "../components/Requirements/JobForm";
 
+// Icons
 import HomeIcon from "@mui/icons-material/Home";
 import PeopleIcon from "@mui/icons-material/People";
 import WorkIcon from "@mui/icons-material/Work";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AddIcon from "@mui/icons-material/Add";
-import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
+// Assets
+import logo from "../assets/logo-01.png";
 
-
-
-// Tabs Configured for Each Role
+// Tabs configuration based on roles
 const TABS_BY_ROLE = {
   EMPLOYEE: [
     {
@@ -52,8 +53,6 @@ const TABS_BY_ROLE = {
       component: <Submissions />,
       icon: <AssignmentIcon />,
     },
-
-    
   ],
   ADMIN: [
     {
@@ -62,7 +61,12 @@ const TABS_BY_ROLE = {
       component: <Planned />,
       icon: <HomeIcon />,
     },
-    { label: "Bench", value: "BENCH", component: <PeopleIcon /> },
+    {
+      label: "Bench",
+      value: "BENCH",
+      component: <Bench />,
+      icon: <PeopleIcon />,
+    },
     {
       label: "AddUser",
       value: "ADDUSER",
@@ -87,11 +91,11 @@ const TABS_BY_ROLE = {
       label: "Bench",
       value: "BENCH",
       component: <Bench />,
-      icon: <HourglassEmpty />,
+      icon: <HourglassEmptyIcon />,
     },
     {
       label: "Job Form",
-      value: "jobFrom",
+      value: "JOB_FORM",
       component: <JobForm />,
       icon: <WorkIcon />,
     },
@@ -101,61 +105,87 @@ const TABS_BY_ROLE = {
       component: <AddUser />,
       icon: <AddIcon />,
     },
-    {
-      label: "Assigned",
-      value: "ASSIGNED",
-      component: <Assigned />,
-      icon: <WorkIcon />,
-    },
-    {
-      label: "Submissions",
-      value: "SUBMISSIONS",
-      component: <Submissions />,
-      icon: <AssignmentIcon />,
-    },
   ],
 };
 
 const DashboardPage = () => {
-  const { roles, logInTimeStamp } = useSelector((state) => state.auth);
-  const user = useSelector((state) => state.auth.user);
-  const [selectedTab, setSelectedTab] = useState("REQUIREMENTS");
-  const navigate = useNavigate();
-  const theme = useTheme();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
+  const { roles, logInTimeStamp, user, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
+
+  console.log('user id from the dashborad ',user.userId);
+  
+
+  const [selectedTab, setSelectedTab] = useState(null);
+
+  const userId = user || null; 
+  const defaultRole = "EMPLOYEE"; // Default role if none exists
+  const userRole = roles?.[0] || defaultRole; // Use the first role or fallback to default
+  const activeTabs = TABS_BY_ROLE[userRole] || []; // Tabs for the current role
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Set default selected tab on role or tabs change
+  useEffect(() => {
+    if (activeTabs.length > 0) {
+      setSelectedTab((prevTab) => prevTab || activeTabs[0].value); // Retain the previous tab if available
+    }
+  }, [activeTabs]);
+
+  // Handle logout
   const handleLogout = () => {
-    dispatch(logoutAsync(user.userId));
-    navigate("/");
+    dispatch(logoutAsync(userId));
+    navigate("/"); // Redirect to home after logout
   };
 
-  const activeTabs = TABS_BY_ROLE[roles[0]] || []; // Tabs based on role
-  const selectedTabComponent = activeTabs.find(
-    (tab) => tab.value === selectedTab
-  )?.component;
+  // Find the component for the selected tab
+  const selectedTabComponent =
+    activeTabs.find((tab) => tab.value === selectedTab)?.component || (
+      <Box>No content available for the selected tab.</Box>
+    );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      {/* Header Component */}
-      <Box sx={{ flexShrink: 0, zIndex: 10 }}>
-        <Header userId={user} logInTimeStamp={logInTimeStamp} orglogo={logo} />
+      {/* Header */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          backgroundColor: "white",
+          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <Header
+          userId={userId}
+          logInTimeStamp={logInTimeStamp}
+          orglogo={logo}
+          onLogout={handleLogout}
+        />
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ display: "flex", flex: 1, mt: 2 }}>
-        {/* Sidebar - Drawer */}
+      <Box sx={{ display: "flex", flex: 1, mt: "64px" }}>
+        {/* Sidebar */}
         <Drawer
           variant="permanent"
           sx={{
-            width: "16.66%", // 2/12 of the page width
+            width: "16.66%",
             flexShrink: 0,
-            marginTop: "7%",
-            maxHeight: "50%",
-
             "& .MuiDrawer-paper": {
               width: "16.66%",
               boxSizing: "border-box",
-              marginTop: "7%",
+              marginTop: "6.4%",
               bgcolor: "rgba(232, 245, 233, 0.5)",
             },
           }}
@@ -168,60 +198,39 @@ const DashboardPage = () => {
                 onClick={() => setSelectedTab(tab.value)}
                 sx={{
                   borderRadius: "8px",
-                  marginTop:'3vh',
-                  borderBottom:
-                    selectedTab === tab.value ? "1px solid #4B70F5" : "inherit",
-                  
-
+                  marginBottom: "8px",
+                  border: selectedTab === tab.value ? "2px solid #4B70F5" : "inherit",
                   "&:hover": {
-                    backgroundColor: "#4B70F5", // Background color on hover
-                    color: "#fff", // Text and icon color on hover
-                    borderRadius: "8px", // Apply border radius on hover
-                    transform: 'scale(1.05)', 
-                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+                    backgroundColor: "#4B70F5",
+                    color: "#fff",
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                    borderRadius: "8px",
                   },
-                  "&:hover .MuiListItemIcon-root": {
-                    color: "#fff", // Change icon color on hover
-                  },
-                  "&:hover .MuiListItemText-root": {
-                    color: "#fff", // Change text color on hover
-                  },
-                  marginBottom: "8px", // Optional: Add spacing between items
+                  "&:hover .MuiListItemIcon-root": { color: "#fff" },
+                  "&:hover .MuiListItemText-primary": { color: "#fff" }, // Add this line to target the text
                 }}
               >
-                <ListItemIcon
-                  sx={{
-                    color: "inherit", // Inherit text color for consistency
-                  }}
-                >
-                  {tab.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={tab.label}
-                  sx={{
-                    "& .MuiTypography-root": {
-                      color: "inherit", // Inherit hover color
-                    },
-                  }}
-                />
+                <ListItemIcon sx={{ color: "inherit" }}>{tab.icon}</ListItemIcon>
+                <ListItemText primary={tab.label} />
               </ListItem>
             ))}
           </List>
         </Drawer>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <Box
           sx={{
             flex: 1,
-            width: "83.33%", // 8/12 of the page width
-            display: "flex",
-            flexDirection: "column",
             padding: 3,
-            marginTop: "100px",
+            width: "83.33%",
+            height: "calc(100vh - 64px)",
+            overflow: "hidden",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
-          {/* Active Tab Content */}
-          <Box sx={{ flex: 1 }}>{selectedTabComponent}</Box>
+          {selectedTabComponent}
         </Box>
       </Box>
     </Box>

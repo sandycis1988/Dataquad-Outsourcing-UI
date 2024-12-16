@@ -20,6 +20,10 @@ const Header = ({ userId, logInTimeStamp, orglogo }) => {
   const [image, setImage] = useState(null); // Local state for the profile image
   const [anchorEl, setAnchorEl] = useState(null); // State for menu anchor element
 
+  console.log('lo g form header user id ',userId);
+  console.log('lo g form header user timestamp  ',logInTimeStamp);
+  
+
   // Handle profile image upload (locally)
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -35,6 +39,7 @@ const Header = ({ userId, logInTimeStamp, orglogo }) => {
       reader.readAsDataURL(file); // Start reading the file as Base64
     }
   };
+
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget); // Set the anchor element for the menu
@@ -107,7 +112,7 @@ const Header = ({ userId, logInTimeStamp, orglogo }) => {
                 fontWeight: "bold",
               }}
             >
-              {userId || "DQIND09"}
+              {userId }
             </Typography>
             <Typography
               variant="body2"

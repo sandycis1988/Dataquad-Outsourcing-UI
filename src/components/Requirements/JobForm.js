@@ -1,5 +1,12 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  updateField,
+  resetForm,
+  postJobRequirement,
+  postJobRequirementSuccess,
+} from "../../redux/features/jobFormSlice";
 import {
   Box,
   Button,
@@ -11,67 +18,58 @@ import {
   MenuItem,
   Grid,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import axios from "axios";
 
 const JobForm = () => {
-  const theme = useTheme(); // Access the theme
-
-  const initialFormData = {
-    jobId: "",
-    jobTitle: "",
-    clientName: "",
-    jobDescription: "",
-    jobType: "",
-    location: "",
-    jobMode: "",
-    experienceRequired: "",
-    noticePeriod: "",
-    relevantExperience: "",
-    qualification: "",
-    requirementAddedTimeStamp: "",
-    recruiterIds: [], // Initialize as an empty array
-    status: "Open", // Default value for status
-    remark: "",
-  };
-
-  const [formData, setFormData] = useState(initialFormData);
+  const theme = useTheme();
+  const [employeesData, setEmployeesData] = useState([]);
+  const dispatch = useDispatch();
+  const { formData, status, error, jobPostings } = useSelector(
+    (state) => state.jobForm
+  );
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
-    if (name === "recruiterIds") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: typeof value === "string" ? value.split(",") : value, // Ensure recruiterIds is an array
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    dispatch(updateField({ name, value }));
   };
 
   const handleSubmit = () => {
-    axios
-      .post("http://192.168.0.181:9998/requirements/add", formData, {
-        headers: {
-          "Content-Type": "application/json; charset=UTF-8",
-          "Access-Control-Allow-Origin": "*", // Make sure your server allows CORS
-        },
-      })
+    dispatch(postJobRequirement(formData))
       .then((response) => {
-        console.log("Form submitted successfully:", response.data);
-        setFormData(initialFormData); // Reset form after submission
-        window.location.reload();
+        // Dispatch success message along with job details
+        dispatch(
+          postJobRequirementSuccess({
+            jobId: formData.jobId,
+            jobTitle: formData.jobTitle,
+            successMessage: "Requirement Added Successfully",
+          })
+        );
       })
       .catch((error) => {
-        console.error("Error submitting the form:", error);
+        // Handle error
       });
   };
 
+  useEffect(() => {
+    const fetchEmployeesData = async () => {
+      try {
+        const response = await axios.get(
+          `http://192.168.0.162:8082/users/employee` // Replace userId as necessary
+        );
+        setEmployeesData(response.data);
+      } catch (err) {
+        console.log("Failed to load job requirements");
+      }
+    };
+
+    fetchEmployeesData();
+  }, []);
+
   const handleClear = () => {
-    setFormData(initialFormData); // Reset form fields
+    dispatch(resetForm());
   };
 
   const commonBorderStyles = {
@@ -83,7 +81,6 @@ const JobForm = () => {
       borderWidth: "0.3px",
       backgroundColor: "transparent",
     },
-
     "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
       borderColor: "black",
     },
@@ -115,6 +112,40 @@ const JobForm = () => {
       >
         Job Post
       </Typography>
+
+      {status === "succeeded" && jobPostings && (
+        <Box alignItems={"center"}>
+          <Box
+            sx={{
+              maxWidth: "500px",
+              padding: 2,
+              marginBottom: 2,
+              backgroundColor: "#d4edda", // Light green background (for success alert)
+              border: "1px solid #c3e6cb", // Light green border
+              borderRadius: 2,
+              color: "#155724", // Dark green text (for better contrast)
+              boxShadow: 1,
+              display: "flex", // Use flexbox for alignment
+              alignItems: "center", // Vertically align items
+              justifyContent: "space-between", // Space between the text and icon
+            }}
+          >
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: "bold",
+                flex: 1,
+                color: "green",
+                fontFamily: "monospace",
+              }}
+            >
+              {jobPostings.jobId} - {jobPostings.jobTitle} -{" "}
+              {jobPostings.successMessage}
+            </Typography>
+            <CheckCircleIcon fontSize="small" sx={{ color: "green" }} />
+          </Box>
+        </Box>
+      )}
 
       {/* Grid layout for form fields */}
       <Grid container spacing={3}>
@@ -150,77 +181,50 @@ const JobForm = () => {
           </Grid>
         ))}
 
-        {/* Job Type */}
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth variant="outlined">
-            <InputLabel sx={{ color: "black" }}>Job Type</InputLabel>
-            <Select
-              name="jobType"
-              value={formData.jobType}
-              onChange={handleChange}
-              label="Job Type"
-              sx={{
-                ...commonBorderStyles,
-                "&:hover": {
-                  borderColor: theme.palette.primary.main,
-                },
-              }}
-            >
-              <MenuItem value="Full-time">Full-time</MenuItem>
-              <MenuItem value="Part-time">Part-time</MenuItem>
-              <MenuItem value="Contract">Contract</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+        {/* Dropdown Fields */}
+        {[
+          {
+            name: "jobType",
+            label: "Job Type",
+            options: ["Full-time", "Part-time", "Contract"],
+          },
+          {
+            name: "jobMode",
+            label: "Job Mode",
+            options: ["Remote", "On-site", "Hybrid"],
+          },
+          {
+            name: "noticePeriod",
+            label: "Notice Period",
+            options: ["15", "30", "45", "60", "75", "90"],
+          },
+        ].map((field) => (
+          <Grid item xs={12} sm={6} md={3} key={field.name}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel sx={{ color: "black" }}>{field.label}</InputLabel>
+              <Select
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+                label={field.label}
+                sx={{
+                  ...commonBorderStyles,
+                  "&:hover": {
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {field.options.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        ))}
 
-        {/* Job Mode */}
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth variant="outlined">
-            <InputLabel sx={{ color: "black" }}>Job Mode</InputLabel>
-            <Select
-              name="jobMode"
-              value={formData.jobMode}
-              onChange={handleChange}
-              label="Job Mode"
-              sx={{
-                ...commonBorderStyles,
-                "&:hover": {
-                  borderColor: theme.palette.primary.main,
-                },
-              }}
-            >
-              <MenuItem value="Remote">Remote</MenuItem>
-              <MenuItem value="On-site">On-site</MenuItem>
-              <MenuItem value="Hybrid">Hybrid</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth variant="outlined">
-            <InputLabel sx={{ color: "black" }}>Notice Period</InputLabel>
-            <Select
-              name="noticePeriod"
-              value={formData.noticePeriod}
-              onChange={handleChange}
-              label="Notice Period"
-              sx={{
-                ...commonBorderStyles,
-                "&:hover": {
-                  borderColor: theme.palette.primary.main,
-                },
-              }}
-            >
-              <MenuItem value="15">15 days</MenuItem>
-              <MenuItem value="30">30 days</MenuItem>
-              <MenuItem value="45">45 days</MenuItem>
-              <MenuItem value="60">60 days</MenuItem>
-              <MenuItem value="75">75 days</MenuItem>
-              <MenuItem value="90">90 days</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {/* New Fields */}
+        {/* DateTime Field */}
         <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
@@ -235,31 +239,30 @@ const JobForm = () => {
           />
         </Grid>
 
-        {/* Recruiter Ids */}
-
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6} md={6} key="jobDescription">
           <TextField
             fullWidth
             variant="outlined"
-            label="Job-Description"
-            name="remark"
+            type="text"
+            label="Job Description"
+            name="jobDescription"
             value={formData.jobDescription}
             onChange={handleChange}
             multiline
-            rows={3}
+            rows={4} // Adjust the number of rows based on your preference
             sx={commonBorderStyles}
           />
         </Grid>
+
+        {/* Multi-select Field */}
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel sx={{ color: "black" }}>Recruiter IDs</InputLabel>
             <Select
-              multiple
               name="recruiterIds"
               value={formData.recruiterIds}
               onChange={handleChange}
               label="Recruiter IDs"
-              renderValue={(selected) => selected.join(", ")}
               sx={{
                 ...commonBorderStyles,
                 "&:hover": {
@@ -267,16 +270,16 @@ const JobForm = () => {
                 },
               }}
             >
-              <MenuItem value="DQIND01">DQIND01</MenuItem>
-              <MenuItem value="DQIND02">DQIND02</MenuItem>
-              <MenuItem value="DQIND03">DQIND03</MenuItem>
-              <MenuItem value="DQIND04">DQIND04</MenuItem>
-              <MenuItem value="DQIND05">DQIND05</MenuItem>
+              {employeesData.map((employee) => (
+                <MenuItem key={employee.employeeId} value={employee.employeeId}>
+                  {employee.employeeName}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Grid>
 
-        {/* Status */}
+        {/* Status Field */}
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
             <InputLabel sx={{ color: "black" }}>Status</InputLabel>
@@ -317,8 +320,13 @@ const JobForm = () => {
                 backgroundColor: theme.palette.primary.dark,
               },
             }}
+            disabled={status === "loading"}
           >
-            POST REQUIREMENT
+            {status === "loading" ? (
+              <CircularProgress size={24} />
+            ) : (
+              "POST REQUIREMENT"
+            )}
           </Button>
         </Grid>
         <Grid item xs={12} sm={6} md={2}>
@@ -340,6 +348,11 @@ const JobForm = () => {
           </Button>
         </Grid>
       </Grid>
+      {status === "failed" && (
+        <Typography color="error" variant="body2" textAlign={"center"} mt={2}>
+          {error}
+        </Typography>
+      )}
     </Box>
   );
 };

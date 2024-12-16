@@ -3,7 +3,6 @@ import axios from "axios";
 import BASE_URL from "../apiConfig";
 
 // Async action for form submission
-// charset=UTF-8
 export const submitFormData = createAsyncThunk(
   "form/submit",
   async (formData, { rejectWithValue }) => {
@@ -13,10 +12,9 @@ export const submitFormData = createAsyncThunk(
         `${BASE_URL}/users/register`,
         formData,
         {
-
           headers: {
-            "Content-Type": "application/json", // Corrected the charset
-           "Access-Control-Allow-Origin": "*", // Allow cross-origin requests (though this should ideally be set server-side)
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
           },
         }
       );
@@ -24,15 +22,23 @@ export const submitFormData = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error("Error submitting form:", error.response);
-      
-      // Extract the errorMessage from the API response if it exists
-      const errorMessage = error.response?.data?.error?.errorMessage || "Error submitting form";
-      return rejectWithValue(errorMessage);
+
+      // Check for specific error code 300 for duplicate userId or email
+      const errorCode = error.response?.data?.error?.errorcode;
+      const errorMessage = error.response?.data?.error?.errormessage || "Error submitting form";
+
+      // Prevent form submission if API errors occur
+      if (errorCode === "300") {
+        // Return the error message to reject the form submission
+        return rejectWithValue(errorMessage);
+      } else {
+        return rejectWithValue("An unknown error occurred");
+      }
     }
   }
 );
 
-// Initial state with updated form structure
+// Initial state
 const initialState = {
   status: null,
   error: {
@@ -44,10 +50,11 @@ const initialState = {
     personalemail: null,
     phoneNumber: null,
     designation: null,
-    gender:null,
-    joiningDate:null,
-    dob:null,
+    gender: null,
+    joiningDate: null,
+    dob: null,
     roles: null,
+    general: null, // Add a general error field
   },
   response: null,
   formData: {
@@ -59,10 +66,10 @@ const initialState = {
     personalemail: "",
     phoneNumber: "",
     designation: "",
-    gender:'',
-    joiningDate:null,
-    dob:null,
-    roles: [], 
+    gender: '',
+    joiningDate: null,
+    dob: null,
+    roles: [],
   },
 };
 
@@ -94,9 +101,38 @@ const formSlice = createSlice({
     },
 
     // Clear form data
-    clearFormData: (state) => {
-      console.log("Clearing form data...");
-      state.formData = initialState.formData;  // Only reset formData, leave status, error, response intact
+    clearFormData(state) {
+      state.formData = {
+        userId: "",
+        userName: "",
+        password: "",
+        confirmPassword: "",
+        email: "",
+        personalemail: "",
+        phoneNumber: "",
+        designation: "",
+        gender: "",
+        joiningDate: null,
+        dob: null,
+        roles: [],
+      };
+      state.status = null;
+      state.error = {
+        userId: null,
+        userName: null,
+        password: null,
+        confirmPassword: null,
+        email: null,
+        personalemail: null,
+        phoneNumber: null,
+        designation: null,
+        gender: null,
+        joiningDate: null,
+        dob: null,
+        roles: null,
+        general: null,
+      }; // Reset the error state to the initial structure
+      state.response = null; // Clear the response here
     },
   },
   extraReducers: (builder) => {
@@ -108,16 +144,20 @@ const formSlice = createSlice({
       .addCase(submitFormData.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.response = action.payload;
+        console.log("Log for registration success", action.payload);
       })
       .addCase(submitFormData.rejected, (state, action) => {
         state.status = "failed";
 
-        // If the error contains an errorMessage, map it to the userId field (or any relevant field)
+        // If there is an error message, map it to the respective field
         if (action.payload) {
-          if (action.payload.includes("userId already exists")) {
-            state.error.userId = action.payload;
+          // Handle errors for duplicate userId or email
+          if (action.payload.includes("userId already exists") || action.payload.includes("email is already in use")) {
+            state.error.userId = action.payload; // You can display it as email error as well
+            state.error.email = action.payload; // If you want to handle it separately for email
+          } else {
+            state.error.general = action.payload; // General error message
           }
-          // You can add additional field-specific checks here
         } else {
           state.error.general = "An unknown error occurred";
         }

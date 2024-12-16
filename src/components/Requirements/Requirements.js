@@ -16,61 +16,44 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import axios from "axios";
+import { useSelector } from "react-redux";
+
+
 
 const Requirements = () => {
+  const user = useSelector((state) => state.auth.user);
   const [requirementsList, setRequirementsList] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [openDialog, setOpenDialog] = useState(false);
   const [fullDescription, setFullDescription] = useState("");
   const [currentJobTitle, setCurrentJobTitle] = useState("");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulating fetched data
-    const data = [
-      {
-        jobId: "JAVA21",
-        jobTitle: "Java Full Stack with Angular",
-        clientName: "Accenture",
-        jobDescription:
-          "This is an example of a detailed job description. View more for additional context.",
-        jobType: "Part-time",
-        location: "HYD",
-        jobMode: "On-site",
-        experienceRequired: "4",
-        noticePeriod: "1 month",
-        relevantExperience: "2",
-        qualification: "B-Tech/BE, Equal to Computers",
-        requirementAddedTimeStamp: "2024-12-09T16:26:48.128027",
-        status: "In Progress",
-        remark: "Assigned to Recruiters",
-      },
-      {
-        jobId: "JAVA22",
-        jobTitle: "Java Full Stack with Angular",
-        clientName: "Accenture",
-        jobDescription:
-          "Shortened job description for demonstration. Click to view more details.",
-        jobType: "Part-time",
-        location: "HYD",
-        jobMode: "On-site",
-        experienceRequired: "4",
-        noticePeriod: "1 month",
-        relevantExperience: "2",
-        qualification: "B-Tech/BE, Equal to Computers",
-        requirementAddedTimeStamp: "2024-12-09T16:29:57.750033",
-        status: "In Progress",
-        remark: "Assigned to Recruiters",
-      },
-    ];
-    setRequirementsList(data);
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          `http://192.168.0.162:8111/requirements/getAssignments` // Replace userId as necessary
+        );
+        setRequirementsList(response.data);
+      } catch (err) {
+        setError("Failed to load job requirements");
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const tableHeaders = requirementsList.length > 0 ? Object.keys(requirementsList[0]) : [];
-  const paginatedData = requirementsList.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  
+
+  const tableHeaders =
+    requirementsList.length > 0 ? Object.keys(requirementsList[0]) : [];
+   // Safeguard against non-array `requirementsList`
+   const paginatedData = Array.isArray(requirementsList)
+   ? requirementsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+   : [];
 
   const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => {
@@ -100,13 +83,31 @@ const Requirements = () => {
         Requirements List
       </Typography>
 
+      {/* Error handling message */}
+      {error && (
+        <Box
+          sx={{
+            padding: 2,
+            marginBottom: 2,
+            backgroundColor: "#f8d7da", // Light red background for error
+            border: "1px solid #f5c6cb",
+            borderRadius: 2,
+            color: "#721c24", // Dark red text
+          }}
+        >
+          <Typography variant="body1">{error}</Typography>
+        </Box>
+      )}
+
       {/* Table Section */}
       <TableContainer
         component={Paper}
         sx={{
-          // maxHeight: "500px",
           border: "1px solid #ddd",
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          maxHeight: "600px", // Set the height as needed
+          maxWidth:'1200px',
+          overflowY: "auto", 
         }}
       >
         <Table>
@@ -119,7 +120,8 @@ const Requirements = () => {
                     fontWeight: "bold",
                     color: "#fff",
                     textTransform: "capitalize",
-                    border: "1px solid #ddd", // Adding border for each header cell
+                    border: "1px solid #ddd",
+                    padding:'8px',
                   }}
                 >
                   {header}
@@ -142,7 +144,8 @@ const Requirements = () => {
                     <TableCell
                       key={i}
                       sx={{
-                        border: "1px solid #ddd", // Adding border for each data cell
+                        border: "1px solid #ddd",
+                        padding:'6px',
                       }}
                     >
                       {header === "jobDescription" ? (
@@ -151,10 +154,15 @@ const Requirements = () => {
                             <>
                               {row[header].slice(0, 30)}...
                               <Button
-                                onClick={() => handleOpenDialog(row[header], row.jobTitle)}
+                                onClick={() =>
+                                  handleOpenDialog(row[header], row.jobTitle)
+                                }
                                 size="small"
                                 variant="text"
-                                sx={{ color: "#3f51b5", textTransform: "capitalize" }}
+                                sx={{
+                                  color: "#3f51b5",
+                                  textTransform: "capitalize",
+                                }}
                               >
                                 View More
                               </Button>
