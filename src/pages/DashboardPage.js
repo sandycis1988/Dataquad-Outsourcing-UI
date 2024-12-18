@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useMemo} from "react";
 import {
   Box,
   Drawer,
@@ -20,6 +20,7 @@ import Assigned from "../components/Tabs/Assigned";
 import AddUser from "../components/Tabs/AddUser";
 import Header from "../components/Header";
 import JobForm from "../components/Requirements/JobForm";
+import Interview from "../components/Tabs/Interview";
 
 // Icons
 import HomeIcon from "@mui/icons-material/Home";
@@ -28,6 +29,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AddIcon from "@mui/icons-material/Add";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import GroupIcon from '@mui/icons-material/Group';
 
 // Assets
 import logo from "../assets/logo-01.png";
@@ -52,6 +54,12 @@ const TABS_BY_ROLE = {
       value: "SUBMISSIONS",
       component: <Submissions />,
       icon: <AssignmentIcon />,
+    },
+    {
+      label: "Interview",
+      value: "INTERVIEW",
+      component: <Interview />,
+      icon: <GroupIcon />,
     },
   ],
   ADMIN: [
@@ -105,6 +113,7 @@ const TABS_BY_ROLE = {
       component: <AddUser />,
       icon: <AddIcon />,
     },
+   
   ],
 };
 
@@ -124,7 +133,9 @@ const DashboardPage = () => {
   const userId = user || null; 
   const defaultRole = "EMPLOYEE"; // Default role if none exists
   const userRole = roles?.[0] || defaultRole; // Use the first role or fallback to default
-  const activeTabs = TABS_BY_ROLE[userRole] || []; // Tabs for the current role
+  // const activeTabs = TABS_BY_ROLE[userRole] || []; // Tabs for the current role
+
+  const activeTabs = useMemo(() => TABS_BY_ROLE[userRole] || [], [userRole, TABS_BY_ROLE]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -134,11 +145,17 @@ const DashboardPage = () => {
   }, [isAuthenticated, navigate]);
 
   // Set default selected tab on role or tabs change
-  useEffect(() => {
-    if (activeTabs.length > 0) {
-      setSelectedTab((prevTab) => prevTab || activeTabs[0].value); // Retain the previous tab if available
-    }
-  }, [activeTabs]);
+//   useEffect(() => {
+//   if (activeTabs.length > 0) {
+//     setSelectedTab((prevTab) => prevTab || activeTabs[0].value);
+//   }
+// }, [activeTabs]);
+
+useEffect(() => {
+  if (activeTabs.length > 0) {
+    setSelectedTab((prevTab) => prevTab || activeTabs[0].value);
+  }
+}, [activeTabs]);
 
   // Handle logout
   const handleLogout = () => {

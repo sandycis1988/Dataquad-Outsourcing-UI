@@ -15,18 +15,14 @@ import {
 import axios from "axios";
 
 const Timesheet = () => {
-  const [entries, setEntries] = useState([
-    { date: "2024-01-28", day: "Sunday", hoursWorked: 9 },
-    { date: "2024-01-27", day: "Saturday", hoursWorked: 12 },
-  ]);
-
+  const [entries, setEntries] = useState([]); // Stores timesheet entries
   const [form, setForm] = useState({
     date: "",
     day: "",
     hoursWorked: "",
-  });
-
+  }); // Form data
   const [error, setError] = useState(""); // Error message state
+  const [loading, setLoading] = useState(false); // Loading state for API call
 
   // Get the day name for a given date
   const getDayName = (dateString) => {
@@ -66,9 +62,13 @@ const Timesheet = () => {
       return;
     }
 
+    if (form.hoursWorked <= 0) {
+      setError("Please enter valid hours worked.");
+      return;
+    }
+
     // Check if the date already exists
     const isDuplicateDate = entries.some((entry) => entry.date === form.date);
-
     if (isDuplicateDate) {
       setError("This date has already been added. Please select another date.");
       return;
@@ -80,19 +80,24 @@ const Timesheet = () => {
 
     // Send the single entry to the backend API via PUT request
     try {
-      const userId = "DQIND009"; // Replace with dynamic userId if needed
+      setLoading(true); // Set loading state
+      const userId = "DQIND78"; // Replace with dynamic userId if needed
       const response = await axios.put(
-        `http://192.168.29.186:8082/api/timesheets/entries?userId=${userId}&date=${form.date}`,
-        { date: form.date, day: form.day, hoursWorked: form.hoursWorked }
+        `http://192.168.0.194:8082/api/timesheets/entries?id=${userId}`,
+        [{ date: form.date, day: form.day, hoursWorked: form.hoursWorked }] // Send as array
       );
 
-      // Handle successful response
-      console.log("Timesheet entry updated:", response.data);
+      // Handle successful response and update entries state with new data
+      const { entries: updatedEntries, totalHoursWorked } = response.data;
+      setEntries(updatedEntries); // Update entries state with the API response
       setForm({ date: "", day: "", hoursWorked: "" }); // Reset the form
       setError(""); // Clear error
+      console.log("Timesheet entry updated:", response.data);
     } catch (err) {
       console.error("Error updating timesheet:", err);
       setError("Failed to update timesheet. Please try again.");
+    } finally {
+      setLoading(false); // Reset loading state
     }
   };
 
@@ -151,8 +156,13 @@ const Timesheet = () => {
           value={form.hoursWorked}
           onChange={handleInputChange}
         />
-        <Button variant="contained" color="primary" onClick={handleAddEntry}>
-          Add Entry
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddEntry}
+          disabled={loading} // Disable button while loading
+        >
+          {loading ? "Saving..." : "Add Entry"}
         </Button>
       </Box>
 
@@ -174,14 +184,15 @@ const Timesheet = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {entries.map((entry, index) => (
-              <TableRow key={index}>
-                <TableCell>{entry.date}</TableCell>
-                <TableCell>{entry.day}</TableCell>
-                <TableCell>{entry.hoursWorked}</TableCell>
-              </TableRow>
-            ))}
-            {entries.length === 0 && (
+            {entries.length > 0 ? (
+              entries.map((entry, index) => (
+                <TableRow key={index}>
+                  <TableCell>{entry.date}</TableCell>
+                  <TableCell>{entry.day}</TableCell>
+                  <TableCell>{entry.hoursWorked}</TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={3} align="center">
                   No entries yet

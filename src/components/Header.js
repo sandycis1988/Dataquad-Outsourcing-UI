@@ -20,8 +20,7 @@ const Header = ({ userId, logInTimeStamp, orglogo }) => {
   const [image, setImage] = useState(null); // Local state for the profile image
   const [anchorEl, setAnchorEl] = useState(null); // State for menu anchor element
 
-  console.log('lo g form header user id ',userId);
-  console.log('lo g form header user timestamp  ',logInTimeStamp);
+
   
 
   // Handle profile image upload (locally)

@@ -7,9 +7,11 @@ import { useSelector } from "react-redux";
 import ForgotPassword from "./components/ForgotPassword";
 import EmployeeRegistrationForm from "./components/EmployeeRegistrationForm";
 import JobForm from "./components/Requirements/JobForm";
-import  Dashboard  from "./components/Dashboard";
+
 
 import Timesheet from './components/Timesheet'
+import CandidateSubmissionForm from "./components/CandidateSubmissionFrom";
+import DatePickerField from "./components/MuiComponents/MuiDatePicker";
 
 function App() {
   const { roles } = useSelector((state) => state.auth);
@@ -21,6 +23,8 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage/>} />
         <Route path="/job" element={<JobForm />} />
         <Route path="/emp" element={<EmployeeRegistrationForm />} />
+        <Route path="/candidate" element={<DatePickerField />} />
+
 
 
         {/* Protected Routes based on roles */}

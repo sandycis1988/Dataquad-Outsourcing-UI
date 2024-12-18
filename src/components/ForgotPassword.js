@@ -89,7 +89,8 @@ const ForgotPassword = ({ goBack }) => {
           // Clear OTP and reset to Step 1 after successful password reset
           dispatch(setOtp(""));
           dispatch(setStep(1));
-          navigate("/"); // Navigate to login or home page
+          // navigate("/"); 
+          goBack();
         }
       })
       .catch((err) => {

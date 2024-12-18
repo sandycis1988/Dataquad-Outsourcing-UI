@@ -9,7 +9,7 @@ export const postJobRequirement = createAsyncThunk(
       const response = await axios.post(`http://192.168.0.162:8111/requirements/assignJob`, formData, {
         headers: {
           "Content-Type": "application/json; charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
+          // "Access-Control-Allow-Origin": "*",
         },
       });
       return response.data; // Return API response data

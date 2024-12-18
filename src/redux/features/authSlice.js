@@ -19,11 +19,13 @@ export const loginAsync = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${BASE_URL}/users/login`, // Update with your actual login endpoint
+        `${BASE_URL}/users/login`, 
         { email, password },
         {
+         withCredentials:true,
           headers: {
             "Content-Type": "application/json",
+           // "Access-Control-Allow-Origin": "*",
           },
         }
       );

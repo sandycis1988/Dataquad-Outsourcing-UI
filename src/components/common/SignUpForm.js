@@ -36,6 +36,7 @@ const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSignIn, setIsSignIn] = useState(true);
+
   const [formData, setFormData] = useState({
     userId: "",
     userName: "",
@@ -262,8 +263,9 @@ const SignUpForm = () => {
       const timer = setTimeout(() => {
         setShowAlert(false);
         dispatch(clearFormData())
-      }, 3000);
-      navigate("/");
+        setIsSignIn(true);
+      }, 2000);
+      
       return () => clearTimeout(timer);
     }
   }, [status, response,navigate]);
@@ -341,8 +343,8 @@ const SignUpForm = () => {
             <>
               {showAlert && status === "succeeded" && response && (
                 <Alert severity="success">
-                  Registration Successful! User ID: {response.data.userId},
-                  Email:{response.data.email}
+                  Registration Successful! User ID: {response.data?.userId},
+                  Email:{response.data?.email}
                 </Alert>
               )}
               <Typography

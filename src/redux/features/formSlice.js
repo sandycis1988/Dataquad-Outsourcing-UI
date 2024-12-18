@@ -7,14 +7,15 @@ export const submitFormData = createAsyncThunk(
   "form/submit",
   async (formData, { rejectWithValue }) => {
     try {
-      console.log("Sending form data:", formData); // Log the form data
+      console.log("Sending form data:", formData); 
       const response = await axios.post(
         `${BASE_URL}/users/register`,
         formData,
         {
+         
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+           // "Access-Control-Allow-Origin": "*",
           },
         }
       );

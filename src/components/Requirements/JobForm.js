@@ -57,7 +57,7 @@ const JobForm = () => {
     const fetchEmployeesData = async () => {
       try {
         const response = await axios.get(
-          `http://192.168.0.162:8082/users/employee` // Replace userId as necessary
+          `http://192.168.0.162:8080/users/employee` // Replace userId as necessary
         );
         setEmployeesData(response.data);
       } catch (err) {

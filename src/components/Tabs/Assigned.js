@@ -1,36 +1,55 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import ReusableTable from "../ReusableTable"; // Ensure ReusableTable is correctly imported
+import ReusableTable from "../ReusableTable";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import {
+  CircularProgress,
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+  Button,
+  DialogActions,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import CandidateSubmissionForm from "../CandidateSubmissionFrom";
 
 const Assigned = () => {
-  const [data, setData] = useState([]); // State for table data
-  const [headers, setHeaders] = useState([]); // Dynamic headers
-  const [page, setPage] = useState(0); // Current page for pagination
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
-  const [totalCount, setTotalCount] = useState(0); // Total count for pagination
-  const { user } = useSelector((state) => state.auth); // Get logged-in user details from Redux
+  const [data, setData] = useState([]);
+  const [headers, setHeaders] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
+  const [openSubmitDialog, setOpenSubmitDialog] = useState(false); // State for Submit dialog visibility
+  const [selectedJobForSubmit, setSelectedJobForSubmit] = useState(null); // Store the selected job for submit
+  const [openDescriptionDialog, setOpenDescriptionDialog] = useState(false); // Job Description dialog
+  const [selectedJobDescription, setSelectedJobDescription] = useState(""); // Store selected job description
+  const { user } = useSelector((state) => state.auth);
+  const userId = user;
 
-  const userId = user; // Assuming 'user' holds the userId
-
-  // Fetch data when component mounts or dependencies change
   useEffect(() => {
-    if (!userId) return; // Don't proceed if userId is not available
+    if (!userId) return;
 
     const fetchUserSpecificData = async () => {
       try {
         const response = await axios.get(
           `http://192.168.0.162:8111/requirements/recruiter/${userId}`
         );
-        console.log("API response:", response.data); // Debug log
+        const userData = response.data || [];
+        setTotalCount(response.data.totalCount || userData.length || 0);
 
-        const userData = response.data || []; // Ensure fallback to empty array
-        setData(userData);
-        setTotalCount(response.data.totalCount || userData.length || 0); // Handle missing totalCount with fallback
+        // Manually add the "submit" column to each row
+        const updatedData = userData.map((item) => ({
+          ...item,
+          submitCandidate: "submit candidate", // Adding the "Submit" column manually
+        }));
+        setData(updatedData);
 
-        // Dynamically generate headers from the data keys
-        if (userData.length > 0) {
-          const dynamicHeaders = Object.keys(userData[0]);
+        if (updatedData.length > 0) {
+          const dynamicHeaders = Object.keys(updatedData[0]);
           setHeaders(dynamicHeaders);
         }
       } catch (err) {
@@ -41,46 +60,172 @@ const Assigned = () => {
     fetchUserSpecificData();
   }, [userId, page, rowsPerPage]);
 
-  // Handle page change in pagination
+  const handleOpenSubmitDialog = (job) => {
+    setSelectedJobForSubmit(job); // Store the job for the submit dialog
+    setOpenSubmitDialog(true);
+  };
+
+  const handleCloseSubmitDialog = () => {
+    setOpenSubmitDialog(false);
+    setSelectedJobForSubmit(null);
+  };
+
+  const handleOpenDescriptionDialog = (description) => {
+    setSelectedJobDescription(description); // Store the full job description
+    setOpenDescriptionDialog(true);
+  };
+
+  const handleCloseDescriptionDialog = () => {
+    setOpenDescriptionDialog(false);
+    setSelectedJobDescription("");
+  };
+
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Handle rows per page change in pagination
   const handleRowsPerPageChange = (event) => {
-    const value = parseInt(event.target.value, 10);
-    setRowsPerPage(value);
-    setPage(0); // Reset to the first page when rows per page changes
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
-  // Custom cell rendering logic for the table
   const onCellRender = (row, header) => {
-    if (header === "jobDescription") {
-      return row[header].slice(0, 50) + "..."; // Truncate long descriptions
+    if (header === "submitCandidate") {
+      return (
+        <Link
+          to="#"
+          onClick={() => handleOpenSubmitDialog(row["jobId"])} // Open Submit Dialog
+          style={{  color: "blue", cursor: "pointer" }}
+        >
+          {row[header]}
+        </Link>
+      );
     }
+
+    if (header === "jobDescription") {
+      const description = row[header];
+      return description.length > 10 ? (
+        <>
+          {description.slice(0, 10)}...{" "}
+          <Button
+            onClick={() => handleOpenDescriptionDialog(description)}
+            size="small"
+            variant="text"
+            sx={{
+              color: "#3f51b5",
+              textTransform: "capitalize",
+              padding: 0,
+              minWidth: "auto",
+            }}
+          >
+            View More
+          </Button>
+        </>
+      ) : (
+        description
+      );
+    }
+
     if (header === "requirementAddedTimeStamp") {
-      // Format the timestamp to a readable date
       return new Date(row[header]).toLocaleString();
     }
+
     return row[header];
   };
 
-  // Show loading if userId is not available yet
   if (!userId) {
-    return <div>Loading...</div>;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <ReusableTable
-      data={data} // The data to display in the table
-      headers={headers} // Dynamically generated headers
-      page={page} // Current page number
-      rowsPerPage={rowsPerPage} // Rows per page
-      totalCount={totalCount} // Total number of entries
-      onPageChange={handlePageChange} // Pagination handler
-      onRowsPerPageChange={handleRowsPerPageChange} // Rows per page handler
-      onCellRender={onCellRender} // Custom cell rendering
-    />
+    <>
+      <ReusableTable
+        data={data}
+        headers={headers}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalCount={totalCount}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        onCellRender={onCellRender}
+      />
+
+      {/* Dialog for Submit Candidate */}
+      <Dialog
+        open={openSubmitDialog}
+        onClose={handleCloseSubmitDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography
+            variant="h5"
+            align="start"
+            color="primary"
+            gutterBottom
+            sx={{
+              backgroundColor: "rgba(232, 245, 233)",
+              padding: 1,
+              borderRadius: 1,
+            }}
+          >
+            Candidate Submission Form
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseSubmitDialog}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "primary",
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <CandidateSubmissionForm jobId={selectedJobForSubmit} userId={user} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for Job Description */}
+      <Dialog
+        open={openDescriptionDialog}
+        onClose={handleCloseDescriptionDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" align="center" color="primary">
+            Job Description
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{selectedJobDescription}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDescriptionDialog}
+            variant="contained"
+            color="primary"
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 
