@@ -6,6 +6,7 @@ import forgotPasswordReducer from './features/forgotPasswordSlice'
 import employeeReducer from './features/employeeSlice'
 import jobFormReducer from '../redux/features/jobFormSlice';
 import candidateSubmissionReducer from './features/candidateSubmissionSlice';
+import interviewFormReducer from '../redux/features/interviewSheduleSlice'
 
 
 export const store = configureStore({
@@ -16,6 +17,7 @@ export const store = configureStore({
     employee: employeeReducer,
     jobForm: jobFormReducer,
     candidateSubmission: candidateSubmissionReducer,
+    interviewForm: interviewFormReducer
 
   },
 });

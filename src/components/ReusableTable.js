@@ -27,7 +27,7 @@ const ReusableTable = ({
     <TableContainer
       component={Paper}
       sx={{
-        maxHeight: "500px", // Vertical scroll
+        maxHeight: "800px", // Vertical scroll
         overflow: "auto", // Vertical + Horizontal scroll
         border: "1px solid #ddd",
         boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",

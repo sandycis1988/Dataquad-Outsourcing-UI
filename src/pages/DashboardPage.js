@@ -37,12 +37,7 @@ import logo from "../assets/logo-01.png";
 // Tabs configuration based on roles
 const TABS_BY_ROLE = {
   EMPLOYEE: [
-    {
-      label: "Requirements",
-      value: "REQUIREMENTS",
-      component: <Requirements />,
-      icon: <AssignmentIcon />,
-    },
+    
     {
       label: "Assigned",
       value: "ASSIGNED",

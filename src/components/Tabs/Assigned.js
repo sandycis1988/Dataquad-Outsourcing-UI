@@ -35,6 +35,7 @@ const Assigned = () => {
 
     const fetchUserSpecificData = async () => {
       try {
+        
         const response = await axios.get(
           `http://192.168.0.162:8111/requirements/recruiter/${userId}`
         );

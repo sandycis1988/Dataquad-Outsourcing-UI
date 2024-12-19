@@ -1,26 +1,29 @@
-import React, { useState } from 'react';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TextField } from '@mui/material';
+import React from "react";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { TextField } from "@mui/material";
 
-const MuiDatePicker = () => {
-  const [selectedDate, setSelectedDate] = useState(null);
-
-  const handleDateChange = (newValue) => {
-    setSelectedDate(newValue);
-  };
-
+const MuiDateTimePicker = ({ label, value, onChange, required }) => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <DatePicker
-        label="Select Date"
-        value={selectedDate}
-        onChange={handleDateChange}
-        renderInput={(params) => <TextField {...params} />}
+      <DateTimePicker
+        label={label}
+        value={value}
+        onChange={onChange}
+        renderInput={(params) => (
+          <TextField
+            {...params}                                                                                                                       
+            required={required}
+            fullWidth
+            InputLabelProps={{
+              shrink: true, // Ensure the label displays correctly
+            }}
+          />
+        )}
       />
     </LocalizationProvider>
   );
 };
 
-export default MuiDatePicker;
+export default MuiDateTimePicker;

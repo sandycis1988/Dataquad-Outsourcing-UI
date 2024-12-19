@@ -12,6 +12,7 @@ import JobForm from "./components/Requirements/JobForm";
 import Timesheet from './components/Timesheet'
 import CandidateSubmissionForm from "./components/CandidateSubmissionFrom";
 import DatePickerField from "./components/MuiComponents/MuiDatePicker";
+import InterviewForm from "./components/InterviewForm";
 
 function App() {
   const { roles } = useSelector((state) => state.auth);
@@ -23,7 +24,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage/>} />
         <Route path="/job" element={<JobForm />} />
         <Route path="/emp" element={<EmployeeRegistrationForm />} />
-        <Route path="/candidate" element={<DatePickerField />} />
+        <Route path="/inter" element={<InterviewForm />} />
 
 
 

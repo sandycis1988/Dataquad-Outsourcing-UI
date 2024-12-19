@@ -31,7 +31,7 @@ const SignIn = () => {
         const roles = action.payload.roles;
 
         console.log("user roles : ======", roles);
-
+        if (roles && roles.length) {
         // Navigate based on the user's role
         if (roles.includes("ADMIN")) {
           navigate("/Admin");
@@ -43,6 +43,7 @@ const SignIn = () => {
           // Default route if no role matches
           navigate("/");
         }
+      }
       })
       .catch((error) => {
         // Handle login error

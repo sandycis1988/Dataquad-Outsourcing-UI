@@ -39,14 +39,14 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
     }
   };
 
-  const dropdownOptions = [
-    { value: "15", label: "15-Days" },
-    { value: "30", label: "30-Days" },
-    { value: "45", label: "45-Days" },
-    { value: "60", label: "60-Days" },
-    { value: "75", label: "75-Days" },
-    { value: "90", label: "90-Days" },
-  ];
+  // const dropdownOptions = [
+  //   { value: "15", label: "15-Days" },
+  //   { value: "30", label: "30-Days" },
+  //   { value: "45", label: "45-Days" },
+  //   { value: "60", label: "60-Days" },
+  //   { value: "75", label: "75-Days" },
+  //   { value: "90", label: "90-Days" },
+  // ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
