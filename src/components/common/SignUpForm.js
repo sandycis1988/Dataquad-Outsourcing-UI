@@ -207,9 +207,9 @@ const SignUpForm = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const errors = {
       userId: validateUserId(formData.userId),
       userName: validateUserName(formData.userName),
@@ -221,19 +221,40 @@ const SignUpForm = () => {
       password: validatePassword(formData.password),
       confirmPassword: validateConfirmPassword(formData.confirmPassword),
     };
-
+  
+    // If there are client-side validation errors
     if (Object.values(errors).some((error) => error !== "")) {
       setFormError(errors);
       return;
     }
-
+  
     try {
-      dispatch(submitFormData(formData));
+      const result = await dispatch(submitFormData(formData)).unwrap();
+  
+      // Check server-side errors
+      if (result.error) {
+        setFormError({
+          ...errors,
+          email: result.error.includes("email") ? "Email is already in use" : "",
+          userId: result.error.includes("userId") ? "User ID is already taken" : "",
+        });
+        return;
+      }
+  
+      // Clear form on success
       dispatch(clearFormData());
+      setFormError({}); // Clear all errors
     } catch (error) {
-      console.error("Submission failed: ", error);
+      console.error("Submission failed:", error);
+  
+      // Set a general error if submission fails unexpectedly
+      setFormError({
+        ...errors,
+        general: "An error occurred during submission. Please try again later.",
+      });
     }
   };
+  
 
   // Clear the form
 
