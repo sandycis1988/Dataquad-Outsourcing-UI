@@ -70,7 +70,7 @@ const initialState = {
     gender: '',
     joiningDate: null,
     dob: null,
-    roles: [],
+    roles: ['EMPLOYEE'],
   },
 };
 
@@ -82,23 +82,9 @@ const formSlice = createSlice({
     updateFormData: (state, action) => {
       const { name, value } = action.payload;
 
-      if (name === "roles") {
-        // Check if the role already exists in the array
-        const existingRoleIndex = state.formData.roles.findIndex(
-          (role) => role === value // Assuming `value` is a string representing the role name
-        );
-
-        if (existingRoleIndex >= 0) {
-          // If the role already exists, remove it
-          state.formData.roles.splice(existingRoleIndex, 1);
-        } else {
-          // If the role doesn't exist, add it
-          state.formData.roles.push(value);
-        }
-      } else {
-        // Update other form data fields
+      
         state.formData[name] = value;
-      }
+     
     },
 
     // Clear form data
@@ -115,7 +101,7 @@ const formSlice = createSlice({
         gender: "",
         joiningDate: null,
         dob: null,
-        roles: [],
+        roles: ["EMPLOYEE"],
       };
       state.status = null;
       state.error = {
@@ -143,8 +129,13 @@ const formSlice = createSlice({
         state.error = null;
       })
       .addCase(submitFormData.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.response = action.payload;
+        if (action.payload && action.payload) {
+          state.status = action.payload.error ? "failed" : "succeeded";
+          state.response = action.payload.data
+            ? action.payload.data.data
+            : action.payload.error;
+          console.log("Log for registration success", action.payload);
+        }
         console.log("Log for registration success", action.payload);
       })
       .addCase(submitFormData.rejected, (state, action) => {

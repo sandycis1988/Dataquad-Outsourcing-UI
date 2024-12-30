@@ -20,9 +20,19 @@ import SelectDropdown from "./MuiComponents/SelectDropdown";
 const CandidateSubmissionForm = ({ jobId, userId }) => {
   const dispatch = useDispatch();
   const formData = useSelector((state) => state.candidateSubmission.formData);
-  const successMessage = useSelector((state) => state.candidateSubmission.successMessage);
-  const candidateId = useSelector((state) => state.candidateSubmission.candidateId);
-  const employeeId = useSelector((state) => state.candidateSubmission.employeeId);
+  const successMessage = useSelector(
+    (state) => state.candidateSubmission.successMessage
+  );
+  const candidateId = useSelector(
+    (state) => state.candidateSubmission.candidateId
+  );
+  const employeeId = useSelector(
+    (state) => state.candidateSubmission.employeeId
+  );
+
+  const [formError, setFormError] = useState({
+    contactNumber: "",
+  });
 
   const errorMessage = useSelector(
     (state) => state.candidateSubmission.errorMessage
@@ -31,6 +41,19 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "contactNumber") {
+      if (!/^\d{10}$/.test(value)) {
+        setFormError((prev) => ({
+          ...prev,
+          contactNumber: "Contact number must be exactly 10 digits.",
+        }));
+      } else {
+        setFormError((prev) => ({
+          ...prev,
+          contactNumber: "",
+        }));
+      }
+    }
     if (name === "skills") {
       const skillsArray = value.split(",").map((skill) => skill.trim());
       dispatch(updateFormData({ [name]: skillsArray }));
@@ -72,13 +95,8 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
     }
   }, [successMessage, errorMessage, dispatch]);
 
-
-
   return (
-    <Paper
-      elevation={3}
-      sx={{ padding: 4, maxWidth: 800, margin: "auto", marginTop: 4 }}
-    >
+    <Paper sx={{ padding: 4, maxWidth: 800, margin: "auto", marginTop: 4 }}>
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
           {/* Personal Details */}
@@ -118,9 +136,9 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
             <InputField
               fullWidth
               label="Email ID"
-              name="emailId"
+              name="candidateEmailId"
               type="email"
-              value={formData.emailId}
+              value={formData.candidateEmailId}
               onChange={handleChange}
               required
             />
@@ -131,9 +149,14 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
               label="Contact Number"
               name="contactNumber"
               type="number"
+              error={!!formError.contactNumber}
+              helperText={formError.contactNumber || ""}
               value={formData.contactNumber}
               onChange={handleChange}
               required
+              inputProps={{
+                maxLength: 10, // Optional: Ensure users cannot input more than 10 digits
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -310,7 +333,9 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
       </form>
       {/* Display Success/Error Messages */}
       {successMessage && (
-        <Typography color="green">{successMessage} - {candidateId}-{employeeId}-{jobId}</Typography>
+        <Typography color="green">
+          {successMessage} - {candidateId}-{employeeId}-{jobId}
+        </Typography>
       )}
       {errorMessage && <Typography color="red">{errorMessage}</Typography>}
     </Paper>

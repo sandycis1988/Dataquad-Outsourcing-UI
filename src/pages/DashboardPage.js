@@ -120,7 +120,7 @@ const DashboardPage = () => {
     (state) => state.auth
   );
 
-  console.log('user id from the dashborad ',user.userId);
+  console.log('user id from the dashborad ',user);
   
 
   const [selectedTab, setSelectedTab] = useState(null);

@@ -5,7 +5,6 @@ import { loginAsync } from "../../redux/features/authSlice";
 import {
   Container,
   Box,
-  TextField,
   Typography,
   Button,
   CircularProgress,
@@ -14,6 +13,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ForgotPassword from "../ForgotPassword";
+import InputField from '../MuiComponents/InputField'
 
 const SignIn = () => {
   const dispatch = useDispatch();
@@ -34,11 +34,11 @@ const SignIn = () => {
         if (roles && roles.length) {
         // Navigate based on the user's role
         if (roles.includes("ADMIN")) {
-          navigate("/Admin");
+          navigate("/dashboard");
         } else if (roles.includes("EMPLOYEE")) {
-          navigate("/Employee");
+          navigate("/dashboard");
         } else if (roles.includes("SUPERADMIN")) {
-          navigate("/SuperAdmin");
+          navigate("/dashboard");
         } else {
           // Default route if no role matches
           navigate("/");
@@ -89,7 +89,7 @@ const SignIn = () => {
           ) : (
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
               {/* Email Field */}
-              <TextField
+              <InputField
                 margin="normal"
                 required
                 fullWidth
@@ -103,7 +103,7 @@ const SignIn = () => {
               />
   
               {/* Password Field */}
-              <TextField
+              <InputField
                 margin="normal"
                 required
                 fullWidth
@@ -113,7 +113,7 @@ const SignIn = () => {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                
               />
   
               {/* Submit Button */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReusableTable from "../ReusableTable";
 import axios from "axios";
-// import BASE_URL from "../../redux/apiConfig";
+import BASE_URL from "../../redux/apiConfig";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -12,7 +12,6 @@ import {
   DialogTitle,
   IconButton,
   Typography,
- 
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import InterviewForm from "../InterviewForm";
@@ -37,7 +36,12 @@ const Submissions = () => {
     const fetchSubmissionData = async () => {
       try {
         const response = await axios.get(
-          `http://192.168.0.246:8082/candidate/submissions/${userId}`
+          `${BASE_URL}/candidate/submissions/${userId}`,
+          {
+            headers: {
+              "Content-Type": "application/json", // Example header
+            },
+          }
         );
 
         console.log("user data from api ----", response.data);
@@ -75,6 +79,7 @@ const Submissions = () => {
   const handleOpenInterviewDialog = (candidate) => {
     console.log("Selected Candidate:", candidate);
     setSelectedCandidate(candidate);
+    console.log('')
     setOpenInterviewDialog(true);
   };
 
@@ -168,6 +173,7 @@ const Submissions = () => {
             candidateContactNo={selectedCandidate?.contactNumber}
             clientName={selectedCandidate?.currentOrganization}
             userId={selectedCandidate?.userId}
+            emailId={selectedCandidate?.emailId}  
             handleCloseInterviewDialog={handleCloseInterviewDialog}
           />
         </DialogContent>

@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CandidateSubmissionForm from "../CandidateSubmissionFrom";
+import BASE_URL from "../../redux/apiConfig"
 
 const Assigned = () => {
   const [data, setData] = useState([]);
@@ -37,7 +38,7 @@ const Assigned = () => {
       try {
         
         const response = await axios.get(
-          `http://192.168.0.162:8111/requirements/recruiter/${userId}`
+          `${BASE_URL}/requirements/recruiter/${userId}`
         );
         const userData = response.data || [];
         setTotalCount(response.data.totalCount || userData.length || 0);
@@ -197,7 +198,8 @@ const Assigned = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <CandidateSubmissionForm jobId={selectedJobForSubmit} userId={user} />
+          {/* <CandidateSubmissionForm jobId={selectedJobForSubmit} userId={user} onSuccess={handleCloseSubmitDialog} /> */}
+          <CandidateSubmissionForm jobId={selectedJobForSubmit} userId={user}   />
         </DialogContent>
       </Dialog>
 

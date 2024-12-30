@@ -1,17 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import BASE_URL from "../apiConfig";
 
 // Async thunk for posting job requirements
 export const postJobRequirement = createAsyncThunk(
   "jobForm/postJobRequirement",
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`http://192.168.0.162:8111/requirements/assignJob`, formData, {
+      const response = await axios.post(`${BASE_URL}/requirements/assignJob`, formData, {
         headers: {
           "Content-Type": "application/json; charset=UTF-8",
-          // "Access-Control-Allow-Origin": "*",
         },
       });
+      console.log("job posting log ==== ", response.data);
       return response.data; // Return API response data
     } catch (error) {
       return rejectWithValue(
@@ -42,7 +43,8 @@ const initialState = {
   },
   status: "idle", // idle, loading, succeeded, failed
   error: null,
-  jobPostings: null,  // Start with null to store a single job object
+  successMessage: null, // New field for success messages
+  jobPostings: null, // Start with null to store response data
 };
 
 // Slice for managing job form state
@@ -59,16 +61,12 @@ const jobFormSlice = createSlice({
         state.formData[name] = value;
       }
     },
-    postJobRequirementSuccess: (state, action) => {
-      // Directly set jobPostings to the newly posted job (single job)
-      state.jobPostings = action.payload;
-      state.status = "succeeded";
-    },
     resetForm: (state) => {
       // Reset formData to the initial state
       state.formData = { ...initialState.formData };
       state.status = "idle";
       state.error = null;
+      state.successMessage = null;
     },
   },
   extraReducers: (builder) => {
@@ -76,20 +74,23 @@ const jobFormSlice = createSlice({
       .addCase(postJobRequirement.pending, (state) => {
         state.status = "loading";
         state.error = null;
+        state.successMessage = null;
       })
       .addCase(postJobRequirement.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.error = null;
-        // Reset the form data on success
-        state.formData = { ...initialState.formData };
+        state.successMessage = action.payload.message 
+        state.jobPostings = action.payload; 
+        state.formData = { ...initialState.formData }; 
       })
       .addCase(postJobRequirement.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload;
+        state.error = action.payload; // Capture the error message
+        state.successMessage = null;
       });
   },
 });
 
 // Exporting actions and reducer
-export const { updateField, resetForm, postJobRequirementSuccess } = jobFormSlice.actions;
+export const { updateField, resetForm } = jobFormSlice.actions;
 export default jobFormSlice.reducer;

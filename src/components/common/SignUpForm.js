@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -242,7 +243,7 @@ const SignUpForm = () => {
 
   // timer for the registration success message
   useEffect(() => {
-    if (status === "succeeded" && response) {
+    if (status === "succeeded"||  status === "failed" && response) {
       setShowAlert(true);
 
       setFormData({
@@ -257,7 +258,7 @@ const SignUpForm = () => {
         gender: "",
         joiningDate: "",
         dob: "",
-        roles: [],
+        roles: ['EMPLOYEE'],
       });
 
       const timer = setTimeout(() => {
@@ -286,7 +287,7 @@ const SignUpForm = () => {
       gender: "",
       joiningDate: "",
       dob: "",
-      roles: [],
+      roles: ['EMPLOYEE'],
     });
 
     setFormError({});
@@ -341,10 +342,19 @@ const SignUpForm = () => {
             <SignIn />
           ) : (
             <>
-              {showAlert && status === "succeeded" && response && (
-                <Alert severity="success">
-                  Registration Successful! User ID: {response.data?.userId},
-                  Email:{response.data?.email}
+              {(showAlert && status === "succeeded" || status === "failed") && response && (
+                <Alert severity={status === "succeeded" ? "success" : "error"}>
+                  {status === "succeeded" ? (
+                    <>
+                      Registration Successful! User ID: {response?.data?.userId}
+                      , Email: {response?.data?.email}
+                    </>
+                  ) : (
+                    <>
+                      Registration Failed:{" "}
+                      {response?.error?.errormessage || "Unknown error occurred"}
+                    </>
+                  )}
                 </Alert>
               )}
               <Typography

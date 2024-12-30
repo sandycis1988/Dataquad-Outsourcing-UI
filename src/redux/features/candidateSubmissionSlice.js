@@ -1,6 +1,7 @@
 // src/store/candidateSubmissionSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import BASE_URL from "../apiConfig";
 
 // Initial state
 const initialState = {
@@ -8,7 +9,7 @@ const initialState = {
     userId: "",
     jobId: "",
     fullName: "",
-    emailId: "",
+    candidateEmailId: "",
     contactNumber: "",
     currentOrganization: "",
     qualification: "",
@@ -39,7 +40,7 @@ export const submitFormData = createAsyncThunk(
     try {
       // Actual API call using axios
       const response = await axios.post(
-        "http://192.168.0.246:8082/candidate/submit",
+        `${BASE_URL}/candidate/submit`,
         {
           ...formData,
           userId, // Include userId
@@ -67,6 +68,7 @@ const candidateSubmissionSlice = createSlice({
   reducers: {
     updateFormData(state, action) {
       state.formData = { ...state.formData, ...action.payload };
+      
     },
     resetForm(state) {
       state.formData = initialState.formData;

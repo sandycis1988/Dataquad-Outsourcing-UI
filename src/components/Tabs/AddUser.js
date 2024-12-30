@@ -328,18 +328,19 @@ const AddUser = () => {
                   Email:{response.data?.email}
                 </Alert>
               )}
-              <Typography
-                variant="h4"
-                component="h1"
-                gutterBottom
-                align="start"
-                sx={{
-                  color: theme.palette.text.primary,
-                  fontSize: { xs: "1.8rem", sm: "2.5rem", md: "1.5rem", fontFamily:'monospace' },
-                }}
-              >
-                ADD USER 
-              </Typography>
+               <Typography
+                      variant="h5"
+                      align="start"
+                      color="primary"
+                      gutterBottom
+                      sx={{
+                        backgroundColor: "rgba(232, 245, 233)",
+                        padding: 1,
+                        borderRadius: 1,
+                      }}
+                    >
+                     Add User
+                    </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
                   {/* User ID Field */}
@@ -354,6 +355,7 @@ const AddUser = () => {
                       fullWidth
                       error={!!formError.userId}
                       helperText={formError.userId}
+                      variant="filled"
                     />
                   </Grid>
 
@@ -363,6 +365,7 @@ const AddUser = () => {
                       label="User Name"
                       name="userName"
                       type="text"
+                       variant="filled"
                       value={formData.userName}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -378,6 +381,7 @@ const AddUser = () => {
                       label="Email"
                       name="email"
                       type="email"
+                       variant="filled"
                       value={formData.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -393,6 +397,7 @@ const AddUser = () => {
                       label="Personal Email"
                       name="personalemail"
                       type="email"
+                       variant="filled"
                       value={formData.personalemail}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -408,6 +413,7 @@ const AddUser = () => {
                       label="Phone Number"
                       name="phoneNumber"
                       type="number"
+                       variant="filled"
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -423,6 +429,7 @@ const AddUser = () => {
                       label="Designation"
                       name="designation"
                       type="text"
+                       variant="filled"
                       value={formData.designation}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -442,6 +449,7 @@ const AddUser = () => {
                         onBlur={handleBlur}
                         label="Gender"
                         name="gender"
+                         variant="filled"
                         error={!!formError.gender}
                       >
                         <MenuItem value="Male">Male</MenuItem>
@@ -463,6 +471,7 @@ const AddUser = () => {
                       label="Date of Birth"
                       name="dob"
                       type="date"
+                       variant="filled"
                       value={formData.dob}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -481,6 +490,7 @@ const AddUser = () => {
                       label="Joining Date"
                       name="joiningDate"
                       type="date"
+                       variant="filled"
                       value={formData.joiningDate}
                       onChange={handleJoiningDateChange}
                       onBlur={handleBlur} // Optional: You can also validate on blur
@@ -497,6 +507,7 @@ const AddUser = () => {
                     <TextField
                       label="Password"
                       name="password"
+                       variant="filled"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
@@ -528,6 +539,7 @@ const AddUser = () => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}
+                       variant="filled"
                       onBlur={handleBlur}
                       fullWidth
                       error={!!formError.confirmPassword}
@@ -555,6 +567,7 @@ const AddUser = () => {
                     <InputLabel>Role</InputLabel>
                     <Select
                       label="Select Role"
+                       variant="filled"
                       value={formData.roles[0] || ""}
                       onChange={(e) => handleRoleChange(e.target.value)}
                     >

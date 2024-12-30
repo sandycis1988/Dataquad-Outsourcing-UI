@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useSelector } from "react-redux";
+import BASE_URL from "../../redux/apiConfig";
 
 
 
@@ -35,7 +36,7 @@ const Requirements = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `http://192.168.0.162:8111/requirements/getAssignments` // Replace userId as necessary
+          `${BASE_URL}/requirements/getAssignments` // Replace userId as necessary
         );
         setRequirementsList(response.data);
       } catch (err) {
@@ -105,8 +106,8 @@ const Requirements = () => {
         sx={{
           border: "1px solid #ddd",
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          maxHeight: "600px", // Set the height as needed
-          maxWidth:'1200px',
+          maxHeight: "80vh", // Set the height as needed
+          maxWidth:'160vh',
           overflowY: "auto", 
         }}
       >

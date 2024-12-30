@@ -14,9 +14,16 @@ import {
   CircularProgress,
   Alert,
   TextField,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import MuiDateTimePicker from "../components/MuiComponents/MuiDatePicker"; // Import the new DateTimeField component
 import dayjs from "dayjs";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+dayjs.extend(isSameOrBefore);
 
 const InterviewForm = ({
   jobId,
@@ -25,11 +32,12 @@ const InterviewForm = ({
   candidateContactNo,
   clientName,
   userId,
+  emailId,
   handleCloseInterviewDialog,
 }) => {
   const dispatch = useDispatch();
 
-  const { formData, isSubmitting, submissionSuccess, error } = useSelector(
+  const { formData, isSubmitting, submissionSuccess, error,interviewResponse } = useSelector(
     (state) => state.interviewForm
   );
 
@@ -48,6 +56,7 @@ const InterviewForm = ({
     );
     dispatch(updateFormField({ name: "clientName", value: clientName }));
     dispatch(updateFormField({ name: "userId", value: userId }));
+    dispatch(updateFormField({ name: "emailId", value: emailId }));
   }, [
     jobId,
     candidateId,
@@ -55,6 +64,7 @@ const InterviewForm = ({
     candidateContactNo,
     clientName,
     userId,
+    emailId,
     dispatch,
   ]);
 
@@ -67,8 +77,8 @@ const InterviewForm = ({
     const now = dayjs(); // Current date and time
 
     if (fieldName === "interviewDateTime") {
-      if (newValue && dayjs(newValue).isBefore(now)) {
-        setDateError("Interview Date & Time cannot be in the past.");
+      if (newValue && dayjs(newValue).isSameOrBefore(now, "day")) {
+        setDateError("Interview Date & Time can't be in the past or today.");
         return;
       } else {
         setDateError("");
@@ -154,18 +164,27 @@ const InterviewForm = ({
         gap: 2,
       }}
     >
-      <Typography variant="h5" gutterBottom>
-        Schedule Interview
-      </Typography>
+      
       {submissionSuccess && (
-        <Alert severity="success">Form submitted successfully!</Alert>
+        <>
+          <Alert severity="success">Form submitted successfully!</Alert>
+          {interviewResponse && (
+            <Box mt={2}>
+              <Typography variant="h6">Interview Scheduled:</Typography>
+              <Typography><strong>Candidate ID:</strong> {interviewResponse.candidateId}</Typography>
+              <Typography><strong>User Email:</strong> {interviewResponse.userEmail}</Typography>
+              <Typography><strong>Email ID:</strong> {interviewResponse.emailId}</Typography>
+              <Typography><strong>Client Email:</strong> {interviewResponse.clientEmail}</Typography>
+            </Box>
+          )}
+        </>
       )}
       {error && <Alert severity="error">{error}</Alert>}
       {formError && <Alert severity="error">{formError}</Alert>}
 
       <Grid container spacing={2}>
         {/* Separate field for each input */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Job ID"
             name="jobId"
@@ -174,9 +193,10 @@ const InterviewForm = ({
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Candidate ID"
             name="candidateId"
@@ -185,9 +205,10 @@ const InterviewForm = ({
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Candidate Full Name"
             name="candidateFullName"
@@ -196,20 +217,34 @@ const InterviewForm = ({
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Candidate Contact No"
             name="candidateContactNo"
-            type="tel"
+            type="number"
             value={formData.candidateContactNo || ""}
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
+          <TextField
+            label="Candidate Email"
+            name="candidateEmail"
+            type="email"
+            value={formData.candidateEmail || ""}
+            onChange={handleChange}
+            fullWidth
+            //disabled
+            variant="filled"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Client Name"
             name="clientName"
@@ -218,20 +253,46 @@ const InterviewForm = ({
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
-            label="User ID"
+            label="Client Email"
+            name="clientEmail"
+            type="text"
+            value={formData.clientEmail || ""}
+            onChange={handleChange}
+            fullWidth
+            // disabled
+            variant="filled"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
+          <TextField
+            label="Employee ID"
             name="userId"
             type="text"
             value={formData.userId || ""}
             onChange={handleChange}
             fullWidth
             disabled
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
+          <TextField
+            label="Employee Email"
+            name="userEmail"
+            type="email"
+            value={formData.userEmail || ""}
+            onChange={handleChange}
+            fullWidth
+            variant="filled"
+            // disabled
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Duration (Minutes)"
             name="duration"
@@ -239,10 +300,10 @@ const InterviewForm = ({
             value={formData.duration || ""}
             onChange={handleChange}
             fullWidth
-            
+            variant="filled"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Zoom Link"
             name="zoomLink"
@@ -250,14 +311,15 @@ const InterviewForm = ({
             value={formData.zoomLink || ""}
             onChange={handleChange}
             fullWidth
-            
+            variant="filled"
           />
         </Grid>
 
         {/* Interview Date & Time */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <MuiDateTimePicker
             label="Interview Date & Time"
+            variant="filled"
             value={
               formData.interviewDateTime
                 ? dayjs(formData.interviewDateTime)
@@ -272,9 +334,10 @@ const InterviewForm = ({
         </Grid>
 
         {/* Scheduled Timestamp */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <MuiDateTimePicker
             label="Scheduled Timestamp"
+            variant="filled"
             value={
               formData.interviewScheduledTimestamp
                 ? dayjs(formData.interviewScheduledTimestamp)
@@ -286,6 +349,28 @@ const InterviewForm = ({
             disabled={!formData.interviewDateTime} // Disable until interviewDateTime is set
             required
           />
+        </Grid>
+        <Grid item>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Interview Level</FormLabel>
+            <RadioGroup
+              row // This ensures the Radio buttons are on the same row
+              name="interviewLevel"
+              value={formData.interviewLevel || ""}
+              onChange={handleChange}
+            >
+              <FormControlLabel
+                value="L1"
+                control={<Radio />}
+                label="L1 (Internal)"
+              />
+              <FormControlLabel
+                value="L2"
+                control={<Radio />}
+                label="L2 (External)"
+              />
+            </RadioGroup>
+          </FormControl>
         </Grid>
       </Grid>
 

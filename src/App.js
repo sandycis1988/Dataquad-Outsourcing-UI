@@ -4,15 +4,12 @@ import SignUpForm from "./components/common/SignUpForm";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import { useSelector } from "react-redux";
-import ForgotPassword from "./components/ForgotPassword";
-import EmployeeRegistrationForm from "./components/EmployeeRegistrationForm";
+
 import JobForm from "./components/Requirements/JobForm";
+import LeaveApplication from "./components/LeaveApplication";
 
 
-import Timesheet from './components/Timesheet'
-import CandidateSubmissionForm from "./components/CandidateSubmissionFrom";
-import DatePickerField from "./components/MuiComponents/MuiDatePicker";
-import InterviewForm from "./components/InterviewForm";
+
 
 function App() {
   const { roles } = useSelector((state) => state.auth);
@@ -22,15 +19,13 @@ function App() {
     <Router>
       <Routes>
         <Route path="/dashboard" element={<DashboardPage/>} />
-        <Route path="/job" element={<JobForm />} />
-        <Route path="/emp" element={<EmployeeRegistrationForm />} />
-        <Route path="/inter" element={<InterviewForm />} />
+        
 
 
 
         {/* Protected Routes based on roles */}
         <Route
-          path="/Admin"
+          path="/dashboard"
           element={
             <ProtectedRoute role="ADMIN">
               <DashboardPage />
@@ -38,7 +33,7 @@ function App() {
           }
         />
         <Route
-          path="/Employee"
+          path="/dashboard"
           element={
             <ProtectedRoute role="EMPLOYEE">
               <DashboardPage />
@@ -46,7 +41,7 @@ function App() {
           }
         />
         <Route
-          path="/SuperAdmin"
+          path="/dashboard"
           element={
             <ProtectedRoute role="SUPERADMIN">
               <DashboardPage />
@@ -56,9 +51,10 @@ function App() {
 
         {/* Default redirect to Login */}
         <Route path="/" element={<SignUpForm />} />
-        {/* <Route path="/addUser" element={<AddUser />} /> */}
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/timesheet" element={<Timesheet />} />
+        <Route path="/jobform" element={<JobForm />} />
+        <Route path="/leave" element={<LeaveApplication />} />
+
+      
       </Routes>
     </Router>
   );
