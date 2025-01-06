@@ -25,7 +25,7 @@ export const postJobRequirement = createAsyncThunk(
 // Initial state
 const initialState = {
   formData: {
-    jobId: "",
+    //jobId: "",
     jobTitle: "",
     clientName: "",
     jobDescription: "",

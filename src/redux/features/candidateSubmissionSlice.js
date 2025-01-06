@@ -19,7 +19,7 @@ const initialState = {
     noticePeriod: "",
     currentLocation: "",
     preferredLocation: "",
-    skills: [],
+    skills: '',
     resumeFile: null,
     resumeFilePath: "",
     communicationSkills: "",

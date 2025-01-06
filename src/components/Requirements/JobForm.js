@@ -23,42 +23,8 @@ import BASE_URL from "../../redux/apiConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const ToastMessage = ({ title, jobTitle, jobId }) => (
-  <Box>
-    <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
-      {title}
-    </Typography>
-    {jobTitle && (
-      <Typography sx={{ color: "#fff" }}>Job Title: {jobTitle}</Typography>
-    )}
-    {jobId && <Typography sx={{ color: "#fff" }}>Job ID: {jobId}</Typography>}
-  </Box>
-);
 
-const toastConfig = {
-  position: "top-right",
-  autoClose: 5000,
-  hideProgressBar: false,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true,
-};
 
-const successToastStyle = {
-  background: "#4CAF50",
-  color: "#fff",
-  borderRadius: "8px",
-  padding: "16px",
-  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-};
-
-const errorToastStyle = {
-  background: "#f44336",
-  color: "#fff",
-  borderRadius: "8px",
-  padding: "16px",
-  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-};
 
 const JobForm = () => {
   const theme = useTheme();
@@ -86,21 +52,11 @@ const JobForm = () => {
 
   useEffect(() => {
     if (status === "succeeded" && jobPostingSuccessResponse) {
-      toast.success(
-        <ToastMessage
-          title="Job Created Successfully!"
-          jobTitle={jobPostingSuccessResponse.jobTitle}
-          jobId={jobPostingSuccessResponse.jobId}
-        />,
-        { ...toastConfig, style: successToastStyle }
-      );
+      toast.success(`Job Created Successfully! Job Title: ${jobPostingSuccessResponse.jobTitle} Job ID: ${jobPostingSuccessResponse.jobId}`)
     }
 
     if (status === "failed" && error) {
-      toast.error(<ToastMessage title={error || "An error occurred"} />, {
-        ...toastConfig,
-        style: errorToastStyle,
-      });
+      toast.error(error || "An error occurred");
     }
   }, [status, jobPostingSuccessResponse, error]);
 
@@ -108,25 +64,16 @@ const JobForm = () => {
     try {
       const response = await dispatch(postJobRequirement(formData));
       if (!response.payload?.successMessage) {
-        toast.error(<ToastMessage title="Failed to create job posting" />, {
-          ...toastConfig,
-          style: errorToastStyle,
-        });
+        toast.error("Failed to create job posting");
       }
     } catch (error) {
-      toast.error(<ToastMessage title="Unexpected error occurred" />, {
-        ...toastConfig,
-        style: errorToastStyle,
-      });
+      toast.error("Unexpected error occurred");
     }
   };
 
   const handleClear = () => {
     dispatch(resetForm());
-    toast.info(<ToastMessage title="Form cleared successfully" />, {
-      ...toastConfig,
-      style: { ...successToastStyle, background: "#2196f3" },
-    });
+    toast.info("Form cleared successfully" );
   };
 
   useEffect(() => {
@@ -140,10 +87,7 @@ const JobForm = () => {
         setFetchStatus("failed");
         setFetchError(error.message);
         toast.error(
-          <ToastMessage
-            title={`Failed to fetch employees: ${error.message}`}
-          />,
-          { ...toastConfig, style: errorToastStyle }
+          `Failed to fetch employees: ${error.message}`
         );
       }
     };
@@ -202,7 +146,7 @@ const JobForm = () => {
       <Grid container spacing={3}>
         {/* Text fields */}
         {[
-          { name: "jobId", label: "Job ID", type: "text" },
+          //{ name: "jobId", label: "Job ID", type: "text" },
           { name: "jobTitle", label: "Job Title", type: "text" },
           { name: "clientName", label: "Client Name", type: "text" },
           { name: "location", label: "Location", type: "text" },
@@ -385,9 +329,9 @@ const JobForm = () => {
           color="primary"
           onClick={handleSubmit}
           disabled={status === "loading" || !isFormValid()}
-          sx={{ width: "15%" }}
+          sx={{ width: "20%" }}
         >
-          {status === "loading" ? <CircularProgress size={24} /> : "Submit"}
+          {status === "loading" ? <CircularProgress size={24} /> : "Post Requirement"}
         </Button>
       </Box>
       <ToastContainer />

@@ -9,20 +9,20 @@ import {
   ButtonGroup,
   Container,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
 } from "@mui/material";
 import ReusableTable from "../ReusableTable";
 import BASE_URL from "../../redux/apiConfig";
 
 const INTERVIEW_LEVELS = {
-  ALL: 'all',
-  INTERNAL: 'Internal',
-  EXTERNAL: 'External'
+  ALL: "all",
+  INTERNAL: "Internal",
+  EXTERNAL: "External",
 };
 
 const Interview = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -42,10 +42,12 @@ const Interview = () => {
       try {
         setLoading(true);
         setError(false);
-        
-        const response = await axios.get(`${BASE_URL}/candidate/interviews/${userId}`);
+
+        const response = await axios.get(
+          `${BASE_URL}/candidate/interviews/${userId}`
+        );
         const interviewData = response.data || [];
-        
+
         setData(interviewData);
         applyFilter(interviewData, INTERVIEW_LEVELS.ALL);
       } catch (err) {
@@ -62,7 +64,9 @@ const Interview = () => {
   const filterDataWithValidSchedule = (interviews) => {
     return interviews.filter((interview) => {
       // Ensure the interview has a valid scheduled time, duration, and zoom link
-      return interview.interviewDateTime && interview.duration && interview.zoomLink;
+      return (
+        interview.interviewDateTime && interview.duration && interview.zoomLink
+      );
     });
   };
 
@@ -72,8 +76,12 @@ const Interview = () => {
     if (level === INTERVIEW_LEVELS.ALL) {
       filtered = filterDataWithValidSchedule(interviews);
     } else {
-      filtered = interviews.filter((interview) =>
-        interview.interviewLevel === level && interview.interviewDateTime && interview.duration && interview.zoomLink
+      filtered = interviews.filter(
+        (interview) =>
+          interview.interviewLevel === level &&
+          interview.interviewDateTime &&
+          interview.duration &&
+          interview.zoomLink
       );
     }
 
@@ -96,17 +104,17 @@ const Interview = () => {
   };
 
   const formatDateTime = (dateTime) => {
-    if (!dateTime) return '';
+    if (!dateTime) return "";
     try {
-      return new Date(dateTime).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return new Date(dateTime).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (error) {
-      return '';
+      return "";
     }
   };
 
@@ -116,7 +124,7 @@ const Interview = () => {
       case "interviewScheduledTimestamp":
         return formatDateTime(row[header]);
       case "duration":
-        return row[header] ? `${row[header]} minutes` : ''; // Return an empty string instead of 'N/A'
+        return row[header] ? `${row[header]} minutes` : ""; // Return an empty string instead of 'N/A'
       case "zoomLink":
         return row[header] ? (
           <Button
@@ -126,58 +134,75 @@ const Interview = () => {
             target="_blank"
             rel="noopener noreferrer"
             sx={{
-              textTransform: 'none',
-              minWidth: '100px',
-              fontSize: '0.875rem'
+              textTransform: "none",
+              minWidth: "100px",
+              fontSize: "0.875rem",
             }}
           >
             Join Meeting
           </Button>
-        ) : ''; // Return an empty string instead of 'N/A'
+        ) : (
+          ""
+        ); // Return an empty string instead of 'N/A'
       case "candidateContactNo":
         return row[header] ? (
-          <a href={`tel:${row[header]}`} style={{ textDecoration: 'none', color: theme.palette.primary.main }}>
+          <a
+            href={`tel:${row[header]}`}
+            style={{
+              textDecoration: "none",
+              color: theme.palette.primary.main,
+            }}
+          >
             {row[header]}
           </a>
-        ) : ''; // Return an empty string instead of 'N/A'
+        ) : (
+          ""
+        ); // Return an empty string instead of 'N/A'
       case "candidateEmailId":
       case "userEmail":
       case "clientEmail":
         return row[header] ? (
-          <a href={`mailto:${row[header]}`} style={{ textDecoration: 'none', color: theme.palette.primary.main }}>
+          <a
+            href={`mailto:${row[header]}`}
+            style={{
+              textDecoration: "none",
+              color: theme.palette.primary.main,
+            }}
+          >
             {row[header]}
           </a>
-        ) : ''; // Return an empty string instead of 'N/A'
+        ) : (
+          ""
+        ); // Return an empty string instead of 'N/A'
       default:
-        return row[header] || ''; // Return an empty string instead of 'N/A'
+        return row[header] || ""; // Return an empty string instead of 'N/A'
     }
   };
 
   const FilterButtonGroup = () => (
-    <Box 
-      sx={{ 
-        display: 'flex',
-        justifyContent: 'flex-start',
-        width: '100%',
-        mb: 1 ,
-        ml:1,
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "flex-start",
+        width: "100%",
+        mb: 1,
+        ml: 1,
       }}
     >
       <ButtonGroup
-        variant="contained"
+        variant="filled"
         sx={{
-          '& .MuiButton-root': {
-            minWidth: { xs: '90px', sm: '120px' },
-            height: '40px',
-            textTransform: 'none',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            backgroundColor: 'primary.main',
-            '&:hover': {
-              backgroundColor: 'primary.dark',
-            },
-            '&.active': {
-              backgroundColor: 'primary.dark',
-              boxShadow: '0 0 0 1px rgba(0,0,0,0.15)',
+          "& .MuiButton-root": {
+            minWidth: { xs: "90px", sm: "120px" },
+            height: "40px",
+            textTransform: "none",
+            fontSize: { xs: "0.875rem", sm: "1rem" },
+            backgroundColor: "#EEF7FF", // Default background color
+            color: "#000", // Default text color
+            "&.active": {
+              backgroundColor: "#5AB2FF", // Active background color
+              color: "#fff", // Text color for active button
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.15)",
             },
           },
         }}
@@ -185,13 +210,13 @@ const Interview = () => {
         {Object.entries(INTERVIEW_LEVELS).map(([key, value]) => (
           <Button
             key={key}
-            className={filterLevel === value ? 'active' : ''}
+            className={filterLevel === value ? "active" : ""}
             onClick={() => handleFilterChange(value)}
             sx={{
-              bgcolor: filterLevel === value ? 'primary.dark' : 'primary.main',
+              bgcolor: filterLevel === value ? "primary.dark" : "primary.main",
             }}
           >
-            {key === 'ALL' ? 'All' : value}
+            {key === "ALL" ? "All" : value}
           </Button>
         ))}
       </ButtonGroup>
@@ -204,7 +229,14 @@ const Interview = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "60vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -212,81 +244,98 @@ const Interview = () => {
 
   if (error) {
     return (
-      <Box sx={{ textAlign: "center", padding: 4, color: 'error.main' }}>
+      <Box sx={{ textAlign: "center", padding: 4, color: "error.main" }}>
         Failed to load interviews. Please try again later.
       </Box>
     );
   }
 
-  const headers = data.length > 0 
-    ? Object.keys(data[0])
-    : [];
+  const headers = data.length > 0 ? Object.keys(data[0]) : [];
 
   const emptyRow = headers.reduce((acc, header) => {
-    acc[header] = '';
+    acc[header] = "";
     return acc;
   }, {});
 
   // Apply pagination to the filtered data
-  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedData = filteredData.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <Container maxWidth="xl" maxHeight="100vh" sx={{ py: { xs: 2, sm: 3 } }}>
-      <Box sx={{ 
-        backgroundColor: 'background.paper',
-        borderRadius: 1,
-        boxShadow: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '88vh', 
-      }}>
+      <Box
+        sx={{
+          backgroundColor: "background.paper",
+          borderRadius: 1,
+          boxShadow: 1,
+          display: "flex",
+          flexDirection: "column",
+          height: "88vh",
+        }}
+      >
         {/* Header Section */}
-        <Box sx={{ 
-          p: { xs: 2, sm: 3 },
-          borderBottom: 1,
-          borderColor: 'divider',
-          flexShrink: 0, // Prevent header from shrinking
-        }}>
-          <Typography 
-            variant="h5" 
+        <Box
+          sx={{
+            pl: 1,
+            borderBottom: 1,
+            borderColor: "divider",
+            flexShrink: 0, // Prevent header from shrinking
+            backgroundColor: "rgba(232, 245, 233)",
+            padding: 1,
+            borderRadius: 1,
+            marginBottom:1,
+          }}
+        >
+          <Typography
+            variant="h5"
             component="h1"
-            sx={{ 
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+            sx={{
+              fontSize: { xs: "1.25rem", sm: "1.5rem" },
               fontWeight: 600,
-              mb: 2
+              color: "#333", // Slightly dark color for better contrast
+              mb: 2, // Add margin at the bottom for spacing
             }}
           >
-            Interview Schedule
+            Interview Schedule{" "}
+            {data.length > 0 && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  display: "inline", // Inline so it stays on the same line as the title
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                  fontWeight: 500, // Slightly lighter font weight for the body text
+                  ml: 1, // Margin left to separate it from the title
+                }}
+              >
+                [scheduled interviews {filteredData.length}{" "}
+                {filterLevel !== "all" ? filterLevel : ""}]
+              </Typography>
+            )}
           </Typography>
-          
-          {data.length > 0 && (
-            <Typography 
-              variant="body2" 
-              color="text.secondary"
-              sx={{ mb: 2 }}
-            >
-              Total Records {filteredData.length} {filterLevel !== 'all' ? filterLevel : ''} interview{filteredData.length !== 1 ? 's' : ''}
-            </Typography>
-          )}
         </Box>
 
         {/* Filter Buttons */}
         <FilterButtonGroup />
 
         {/* Table Section */}
-        <Box sx={{ 
-          p: { xs: 1, sm: 2 },
-          flexGrow: 1, // Allow table section to take available space
-          overflowY: 'auto', // Enable vertical scrolling
-          maxHeight: 'calc(100vh - 230px)', // Adjusted height for the table to fit within the view
-        }}>
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            flexGrow: 1, // Allow table section to take available space
+            overflowY: "auto", // Enable vertical scrolling
+            maxHeight: "calc(100vh - 230px)", // Adjusted height for the table to fit within the view
+          }}
+        >
           {filteredData.length === 0 ? (
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                textAlign: "center", 
+            <Typography
+              variant="body1"
+              sx={{
+                textAlign: "center",
                 py: 4,
-                color: 'text.secondary'
+                color: "text.secondary",
               }}
             >
               No interview data available.

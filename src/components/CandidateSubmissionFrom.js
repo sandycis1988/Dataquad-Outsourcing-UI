@@ -9,6 +9,13 @@ import {
   Input,
   FormHelperText,
   CircularProgress,
+  Snackbar,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  // FormHelperText,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -16,10 +23,8 @@ import {
   submitFormData,
   resetForm,
 } from "../redux/features/candidateSubmissionSlice";
-import {  toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
+const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
   const dispatch = useDispatch();
   const formData = useSelector((state) => state.candidateSubmission.formData);
   const successMessage = useSelector(
@@ -49,6 +54,12 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
     communicationSkills: "",
     requiredTechnologiesRating: "",
     resumeFile: "",
+  });
+
+  const [alert, setAlert] = useState({
+    open: false,
+    message: "",
+    severity: "",
   });
 
   const handleFileChange = (e) => {
@@ -82,15 +93,15 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormError((prev) => ({ ...prev, [name]: validateField(name, value) }));
-    if (name === "skills") {
-      dispatch(
-        updateFormData({
-          [name]: value.split(",").map((skill) => skill.trim()),
-        })
-      );
-    } else {
-      dispatch(updateFormData({ [name]: value }));
-    }
+    // if (name === "skills") {
+    //   dispatch(
+    //     updateFormData({
+    //       [name]: value.split(",").map((skill) => skill.trim()),
+    //     })
+    //   );
+    // } else {
+    dispatch(updateFormData({ [name]: value }));
+    //}
   };
 
   const validateField = (name, value) => {
@@ -122,37 +133,27 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (Object.values(formError).some((error) => error !== "")) {
-      toast.error("Please fix the errors before submitting the form.");
+      setAlert({
+        open: true,
+        message: "Please fix the errors before submitting the form.",
+        severity: "error",
+      });
       return;
     }
-    dispatch(submitFormData({ formData, userId, jobId ,userEmail}));
+    dispatch(submitFormData({ formData, userId, jobId, userEmail }));
   };
 
   useEffect(() => {
-    dispatch(updateFormData({ userId, jobId ,userEmail}));
-  }, [userId, jobId, userEmail,dispatch]);
+    dispatch(updateFormData({ userId, jobId, userEmail }));
+  }, [userId, jobId, userEmail, dispatch]);
 
   useEffect(() => {
     if (successMessage) {
-      toast.success(
-        <Box sx={{ padding: 2 }}>
-          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-            {successMessage}
-          </Typography>
-          <Box sx={{ marginTop: 1 }}>
-            <Typography variant="body2">
-              <strong>Candidate ID:</strong> {candidateId}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Employee ID:</strong> {employeeId}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Job ID:</strong> {submittedJobId}
-            </Typography>
-          </Box>
-        </Box>,
-        { autoClose: 5000 }
-      );
+      setAlert({
+        open: true,
+        message: `${successMessage} Candidate ID: ${candidateId}, Employee ID: ${employeeId}, Job ID: ${submittedJobId}`,
+        severity: "success",
+      });
 
       setTimeout(() => {
         dispatch(resetForm());
@@ -160,7 +161,11 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
     }
 
     if (errorMessage) {
-      toast.error(errorMessage);
+      setAlert({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
     }
   }, [
     successMessage,
@@ -186,12 +191,37 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
     />
   );
 
+  const RenderedSelectDropdown = ({
+    name,
+    label,
+    value,
+    onChange,
+    options,
+    error,
+  }) => {
+    return (
+      <FormControl fullWidth margin="normal" error={!!error}>
+        <InputLabel id={`${name}-label`}>{label}</InputLabel>
+        <Select
+          labelId={`${name}-label`}
+          id={name}
+          value={value || ""}
+          onChange={onChange}
+          label={label}
+        >
+          {options.map((item) => (
+            <MenuItem key={item.value} value={item.value}>
+              {item.label}
+            </MenuItem>
+          ))}
+        </Select>
+        {error && <FormHelperText>{error}</FormHelperText>}
+      </FormControl>
+    );
+  };
+
   return (
     <Paper sx={{ padding: 4, maxWidth: 1200, margin: "auto", marginTop: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Candidate Submission Form
-      </Typography>
-
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={6} lg={4}>
@@ -232,9 +262,20 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
             {renderTextField("expectedCTC", "Expected CTC", { type: "number" })}
           </Grid>
           <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("noticePeriod", "Notice Period (in days)", {
-              type: "number",
-            })}
+            <RenderedSelectDropdown
+              name="noticePeriod"
+              label="Notice Period (in days)"
+              value={formData.noticePeriod} // Assuming formData holds your form state
+              onChange={handleChange} // Your function to handle state change
+              options={[
+                { value: "Immediate", label: "Immediate" },
+                { value: "15 days", label: "15 days" },
+                { value: "30 days", label: "30 days" },
+                { value: "45 days", label: "45 days" },
+                { value: "60 days", label: "60 days" },
+              ]}
+              error={formError.noticePeriod} // Assuming formError holds your error messages
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={6} lg={4}>
             {renderTextField("currentLocation", "Current Location")}
@@ -262,45 +303,46 @@ const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
           <Grid item xs={12} sm={6} md={6} lg={4}>
             {renderTextField("overallFeedback", "Overall Feedback", {
               multiline: true,
-              rows: 1,
+              rows: 2,
             })}
           </Grid>
           <Grid item xs={12} sm={6} md={6} lg={4}>
-            <Box sx={{ mt: 2 }}>
-              <Input
-                type="file"
-                accept=".pdf,.docx"
-                onChange={handleFileChange}
-                fullWidth
-                required
-              />
-              <FormHelperText error={!!formError.resumeFile}>
-                {formError.resumeFile || "Upload Resume (PDF or DOCX)"}
-              </FormHelperText>
-            </Box>
-          </Grid>
-          <Grid item xs={12}>
-            <Box display="flex" justifyContent="flex-end" gap={2}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => dispatch(resetForm())}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={20} /> : "Submit"}
-              </Button>
-            </Box>
+            <Input
+              type="file"
+              onChange={handleFileChange}
+              inputProps={{ accept: ".pdf, .docx" }}
+            />
+            {formError.resumeFile && (
+              <FormHelperText error>{formError.resumeFile}</FormHelperText>
+            )}
           </Grid>
         </Grid>
+
+        <Box mt={3} display="flex" justifyContent="flex-end">
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : "Submit"}
+          </Button>
+        </Box>
       </form>
+
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={() => setAlert({ ...alert, open: false })}
+      >
+        <Alert
+          onClose={() => setAlert({ ...alert, open: false })}
+          severity={alert.severity}
+          sx={{ width: "100%" }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

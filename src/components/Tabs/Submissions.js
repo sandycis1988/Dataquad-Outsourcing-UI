@@ -52,7 +52,9 @@ const Submissions = () => {
         setData(updatedData);
 
         if (updatedData.length > 0) {
-          const dynamicHeaders = Object.keys(updatedData[0]);
+          const dynamicHeaders = Object.keys(updatedData[0]).filter(
+            (header) => header !== "interviewStatus" // Exclude the interviewStatus column
+          );
           setHeaders(dynamicHeaders);
         }
       } catch (err) {
@@ -125,7 +127,12 @@ const Submissions = () => {
     }
 
     if (header === "Interview") {
-      return (
+      const isScheduled = row.interviewStatus === "Scheduled"; // Check if the interview is already scheduled
+      return isScheduled ? (
+        <span style={{ color: "gray", cursor: "not-allowed" }}>
+          Scheduled
+        </span>
+      ) : (
         <Link
           to="#"
           onClick={() => handleOpenInterviewDialog(row)}
