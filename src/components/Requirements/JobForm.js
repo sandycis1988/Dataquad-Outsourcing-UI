@@ -18,20 +18,59 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import axios from 'axios'; // Import axios for API requests
+import axios from "axios";
 import BASE_URL from "../../redux/apiConfig";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
+const ToastMessage = ({ title, jobTitle, jobId }) => (
+  <Box>
+    <Typography variant="h6" sx={{ color: "#fff", mb: 1 }}>
+      {title}
+    </Typography>
+    {jobTitle && (
+      <Typography sx={{ color: "#fff" }}>Job Title: {jobTitle}</Typography>
+    )}
+    {jobId && <Typography sx={{ color: "#fff" }}>Job ID: {jobId}</Typography>}
+  </Box>
+);
+
+const toastConfig = {
+  position: "top-right",
+  autoClose: 5000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+};
+
+const successToastStyle = {
+  background: "#4CAF50",
+  color: "#fff",
+  borderRadius: "8px",
+  padding: "16px",
+  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+};
+
+const errorToastStyle = {
+  background: "#f44336",
+  color: "#fff",
+  borderRadius: "8px",
+  padding: "16px",
+  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+};
 
 const JobForm = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { formData, status, error } = useSelector((state) => state.jobForm);
-  const [employeesList, setEmployeesList] = useState([]); // Local state for employees
-  const [fetchStatus, setFetchStatus] = useState("idle"); // Local fetch status
-  const [fetchError, setFetchError] = useState(null); // Local fetch error
-  const [filterEmployees, setFilterEmployees] = useState([]); // Filtered employee list
+  const { formData, status, error, jobPostingSuccessResponse } = useSelector(
+    (state) => state.jobForm
+  );
+  const [employeesList, setEmployeesList] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [fetchError, setFetchError] = useState(null);
+  const [filterEmployees, setFilterEmployees] = useState([]);
 
-  // Handle form field change
   const handleChange = (event) => {
     const { name, value } = event.target;
     dispatch(updateField({ name, value }));
@@ -43,46 +82,77 @@ const JobForm = () => {
 
   useEffect(() => {
     setFilterEmployees(filteredEmployees);
-    console.log("Filtered employees:", filteredEmployees);
   }, [filteredEmployees]);
 
-  // Handle form submission
+  useEffect(() => {
+    if (status === "succeeded" && jobPostingSuccessResponse) {
+      toast.success(
+        <ToastMessage
+          title="Job Created Successfully!"
+          jobTitle={jobPostingSuccessResponse.jobTitle}
+          jobId={jobPostingSuccessResponse.jobId}
+        />,
+        { ...toastConfig, style: successToastStyle }
+      );
+    }
+
+    if (status === "failed" && error) {
+      toast.error(<ToastMessage title={error || "An error occurred"} />, {
+        ...toastConfig,
+        style: errorToastStyle,
+      });
+    }
+  }, [status, jobPostingSuccessResponse, error]);
+
   const handleSubmit = async () => {
     try {
-      await dispatch(postJobRequirement(formData));
-      // Optionally reset the form after success
-      dispatch(resetForm());
+      const response = await dispatch(postJobRequirement(formData));
+      if (!response.payload?.successMessage) {
+        toast.error(<ToastMessage title="Failed to create job posting" />, {
+          ...toastConfig,
+          style: errorToastStyle,
+        });
+      }
     } catch (error) {
-      // Handle error if any
+      toast.error(<ToastMessage title="Unexpected error occurred" />, {
+        ...toastConfig,
+        style: errorToastStyle,
+      });
     }
   };
 
-  // Handle form reset
   const handleClear = () => {
     dispatch(resetForm());
+    toast.info(<ToastMessage title="Form cleared successfully" />, {
+      ...toastConfig,
+      style: { ...successToastStyle, background: "#2196f3" },
+    });
   };
 
-  // Fetch employees data every time component mounts
   useEffect(() => {
     const fetchEmployees = async () => {
-      setFetchStatus("loading"); // Set status to loading before fetching
+      setFetchStatus("loading");
       try {
         const response = await axios.get(`${BASE_URL}/users/employee`);
-        console.log('Employee data:', response.data);
-        setEmployeesList(response.data); // Set employee data in state
-        setFetchStatus("succeeded"); // Set status to succeeded after fetch
+        setEmployeesList(response.data);
+        setFetchStatus("succeeded");
       } catch (error) {
-        setFetchStatus("failed"); // Set status to failed if there is an error
-        setFetchError(error.message); // Capture the error message
+        setFetchStatus("failed");
+        setFetchError(error.message);
+        toast.error(
+          <ToastMessage
+            title={`Failed to fetch employees: ${error.message}`}
+          />,
+          { ...toastConfig, style: errorToastStyle }
+        );
       }
     };
 
     if (fetchStatus === "idle") {
-      fetchEmployees(); // Fetch employee data only if the status is idle
+      fetchEmployees();
     }
-  }, [fetchStatus]); // Dependency array: trigger when fetchStatus changes
+  }, [fetchStatus]);
 
-  // Styles for form controls
   const commonBorderStyles = {
     "& .MuiOutlinedInput-root": {
       backgroundColor: "transparent",
@@ -98,6 +168,10 @@ const JobForm = () => {
     "&.Mui-focused .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
       borderColor: "black",
     },
+  };
+
+  const isFormValid = () => {
+    return Object.values(formData).every((value) => value !== "");
   };
 
   return (
@@ -125,36 +199,23 @@ const JobForm = () => {
         Post Requirement
       </Typography>
 
-      {/* Display success message */}
-      {status === "succeeded" && (
-        <Typography color="success" variant="body2" textAlign="center" mt={2}>
-          Requirement added successfully!
-        </Typography>
-      )}
-
-      {/* Display error message */}
-      {status === "failed" && error && (
-        <Typography color="error" variant="body2" textAlign="center" mt={2}>
-          {error}
-        </Typography>
-      )}
-
-      {/* Display employee fetch error message */}
-      {fetchStatus === "failed" && fetchError && (
-        <Typography color="error" variant="body2" textAlign="center" mt={2}>
-          {fetchError}
-        </Typography>
-      )}
-
-      {/* Grid layout for form fields */}
       <Grid container spacing={3}>
-        {[ 
+        {/* Text fields */}
+        {[
           { name: "jobId", label: "Job ID", type: "text" },
           { name: "jobTitle", label: "Job Title", type: "text" },
           { name: "clientName", label: "Client Name", type: "text" },
           { name: "location", label: "Location", type: "text" },
-          { name: "experienceRequired", label: "Experience Required", type: "number" },
-          { name: "relevantExperience", label: "Relevant Experience", type: "number" },
+          {
+            name: "experienceRequired",
+            label: "Experience Required",
+            type: "number",
+          },
+          {
+            name: "relevantExperience",
+            label: "Relevant Experience",
+            type: "number",
+          },
           { name: "qualification", label: "Qualification", type: "text" },
           { name: "remark", label: "Remark", type: "text" },
         ].map((field) => (
@@ -172,11 +233,31 @@ const JobForm = () => {
           </Grid>
         ))}
 
-        {/* Dropdown Fields */} 
-        {[ 
-          { name: "jobType", label: "Job Type", options: ["Full-time", "Part-time", "Contract"] },
-          { name: "jobMode", label: "Job Mode", options: ["Remote", "On-site", "Hybrid"] },
-          { name: "noticePeriod", label: "Notice Period", options: ["15", "30", "45", "60", "75", "90"] },
+        {/* Dropdown fields */}
+        {[
+          {
+            name: "jobType",
+            label: "Job Type",
+            options: ["Full-time", "Part-time", "Contract"],
+          },
+          {
+            name: "jobMode",
+            label: "Job Mode",
+            options: ["Remote", "On-site", "Hybrid"],
+          },
+          {
+            name: "noticePeriod",
+            label: "Notice Period",
+            options: [
+              "Immediate",
+              "15 days",
+              "30 days",
+              "45 days",
+              "60 days",
+              "75 days",
+              "90 days",
+            ],
+          },
         ].map((field) => (
           <Grid item xs={12} sm={6} md={3} key={field.name}>
             <FormControl fullWidth variant="outlined">
@@ -189,9 +270,7 @@ const JobForm = () => {
                 variant="filled"
                 sx={{
                   ...commonBorderStyles,
-                  "&:hover": {
-                    borderColor: theme.palette.primary.main,
-                  },
+                  "&:hover": { borderColor: theme.palette.primary.main },
                 }}
               >
                 {field.options.map((option) => (
@@ -204,51 +283,48 @@ const JobForm = () => {
           </Grid>
         ))}
 
-        {/* Date Time Field */}
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            fullWidth
-            variant="filled"
-            label="Requirement Added Timestamp"
-            name="requirementAddedTimeStamp"
-            type="datetime-local"
-            value={formData.requirementAddedTimeStamp}
-            onChange={handleChange}
-            sx={commonBorderStyles}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-
-        {/* Job Description Field */}
-        <Grid item xs={12} sm={6} md={6}>
-          <TextField
-            fullWidth
-            variant="filled"
-            type="text"
-            label="Job Description"
-            name="jobDescription"
-            value={formData.jobDescription}
-            onChange={handleChange}
-            multiline
-            rows={3}
-            sx={commonBorderStyles}
-          />
-        </Grid>
-
         {/* Recruiter Select */}
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth variant="outlined">
-            <InputLabel sx={{ color: "black" }}>Recruiter IDs</InputLabel>
+            <InputLabel sx={{ color: "black" }}>Select Recruiter</InputLabel>
             <Select
               name="recruiterIds"
-              value={Array.isArray(formData.recruiterIds) ? formData.recruiterIds : []}
+              value={
+                Array.isArray(formData.recruiterIds)
+                  ? formData.recruiterIds
+                  : []
+              }
               onChange={handleChange}
               label="Recruiter IDs"
               variant="filled"
               sx={{
                 ...commonBorderStyles,
-                "&:hover": {
-                  borderColor: theme.palette.primary.main,
+                "&:hover": { borderColor: theme.palette.primary.main },
+                "& .MuiSelect-icon": { color: theme.palette.primary.main }, // Customize the dropdown arrow color
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    maxHeight: 200, // Fix dropdown height
+                    overflowY: "auto", // Enable vertical scrolling
+                    backgroundColor: "#f7f7f7", // Background for dropdown
+                    borderRadius: 1, // Rounded corners for the dropdown
+                    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)", // Add shadow
+                    "& .MuiMenuItem-root": {
+                      padding: "10px 16px", // Adjust padding for each option
+                      fontSize: "0.9rem", // Adjust font size
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover, // Highlight on hover
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: theme.palette.primary.light, // Highlight for selected option
+                        color: theme.palette.primary.contrastText, // Text color for selected option
+                        "&:hover": {
+                          backgroundColor: theme.palette.primary.main, // Darker shade when hovering over selected
+                        },
+                      },
+                    },
+                  },
                 },
               }}
             >
@@ -256,7 +332,10 @@ const JobForm = () => {
                 <MenuItem disabled>Loading employees...</MenuItem>
               ) : filterEmployees.length > 0 ? (
                 filterEmployees.map((employee) => (
-                  <MenuItem key={employee.employeeId} value={employee.employeeId}>
+                  <MenuItem
+                    key={employee.employeeId}
+                    value={employee.employeeId}
+                  >
                     {employee.employeeName}
                   </MenuItem>
                 ))
@@ -266,45 +345,52 @@ const JobForm = () => {
             </Select>
           </FormControl>
         </Grid>
-      </Grid>
 
-      <Grid container justifyContent="flex-end" spacing={2}>
-        {/* Clear Button */}
-        <Grid item xs={6} sm={6} md={2}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleClear}
-            sx={{
-              fontWeight: "bold",
-            }}
-          >
-            Clear
-          </Button>
-        </Grid>
-
-        {/* Submit Button */}
-        <Grid item xs={6} sm={6} md={3}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-            sx={{
-              fontWeight: "bold",
-              "&:hover": {
-                backgroundColor: "#3f51b5", // Customize hover color if needed
-              },
-            }}
-            disabled={status === "loading"}
-          >
-            {status === "loading" ? (
-              <CircularProgress size={24} />
-            ) : (
-              "POST REQUIREMENT"
-            )}
-          </Button>
+        {/* Job Description Field */}
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            variant="filled"
+            label="Job Description"
+            name="jobDescription"
+            value={formData.jobDescription}
+            onChange={handleChange}
+            sx={commonBorderStyles}
+            multiline
+            rows={3}
+          />
         </Grid>
       </Grid>
+
+      {/* Action buttons */}
+      <Box
+        sx={{
+          marginTop: "3vh",
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 3,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleClear}
+          disabled={status === "loading"}
+          sx={{ width: "15%" }}
+        >
+          Clear
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          disabled={status === "loading" || !isFormValid()}
+          sx={{ width: "15%" }}
+        >
+          {status === "loading" ? <CircularProgress size={24} /> : "Submit"}
+        </Button>
+      </Box>
+      <ToastContainer />
     </Box>
   );
 };

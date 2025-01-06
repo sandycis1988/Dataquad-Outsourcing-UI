@@ -4,318 +4,288 @@ import {
   Button,
   Grid,
   Typography,
-  MenuItem,
   Box,
   Paper,
+  Input,
+  FormHelperText,
+  CircularProgress,
 } from "@mui/material";
-import InputField from "./MuiComponents/InputField";
+import { useDispatch, useSelector } from "react-redux";
 import {
   updateFormData,
   submitFormData,
   resetForm,
 } from "../redux/features/candidateSubmissionSlice";
-import { useDispatch, useSelector } from "react-redux";
-import SelectDropdown from "./MuiComponents/SelectDropdown";
+import {  toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const CandidateSubmissionForm = ({ jobId, userId }) => {
+const CandidateSubmissionForm = ({ jobId, userId,userEmail }) => {
   const dispatch = useDispatch();
   const formData = useSelector((state) => state.candidateSubmission.formData);
   const successMessage = useSelector(
     (state) => state.candidateSubmission.successMessage
   );
+  const errorMessage = useSelector(
+    (state) => state.candidateSubmission.errorMessage
+  );
+  const loading = useSelector((state) => state.candidateSubmission.loading);
   const candidateId = useSelector(
     (state) => state.candidateSubmission.candidateId
   );
   const employeeId = useSelector(
     (state) => state.candidateSubmission.employeeId
   );
+  const submittedJobId = useSelector(
+    (state) => state.candidateSubmission.jobId
+  );
 
   const [formError, setFormError] = useState({
     contactNumber: "",
+    currentCTC: "",
+    expectedCTC: "",
+    totalExperience: "",
+    relevantExperience: "",
+    noticePeriod: "",
+    communicationSkills: "",
+    requiredTechnologiesRating: "",
+    resumeFile: "",
   });
 
-  const errorMessage = useSelector(
-    (state) => state.candidateSubmission.errorMessage
-  );
-  const loading = useSelector((state) => state.candidateSubmission.loading);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      setFormError((prev) => ({
+        ...prev,
+        resumeFile: "Please select a file.",
+      }));
+      dispatch(updateFormData({ resumeFile: null, resumeFilePath: "" }));
+      return;
+    }
+
+    const validTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!validTypes.includes(file.type)) {
+      setFormError((prev) => ({
+        ...prev,
+        resumeFile: "Invalid file type. Only PDF and DOCX are allowed.",
+      }));
+      dispatch(updateFormData({ resumeFile: null, resumeFilePath: "" }));
+      return;
+    }
+
+    setFormError((prev) => ({ ...prev, resumeFile: "" }));
+    dispatch(updateFormData({ resumeFile: file, resumeFilePath: file.name }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "contactNumber") {
-      if (!/^\d{10}$/.test(value)) {
-        setFormError((prev) => ({
-          ...prev,
-          contactNumber: "Contact number must be exactly 10 digits.",
-        }));
-      } else {
-        setFormError((prev) => ({
-          ...prev,
-          contactNumber: "",
-        }));
-      }
-    }
+    setFormError((prev) => ({ ...prev, [name]: validateField(name, value) }));
     if (name === "skills") {
-      const skillsArray = value.split(",").map((skill) => skill.trim());
-      dispatch(updateFormData({ [name]: skillsArray }));
+      dispatch(
+        updateFormData({
+          [name]: value.split(",").map((skill) => skill.trim()),
+        })
+      );
     } else {
       dispatch(updateFormData({ [name]: value }));
     }
   };
 
-  // const dropdownOptions = [
-  //   { value: "15", label: "15-Days" },
-  //   { value: "30", label: "30-Days" },
-  //   { value: "45", label: "45-Days" },
-  //   { value: "60", label: "60-Days" },
-  //   { value: "75", label: "75-Days" },
-  //   { value: "90", label: "90-Days" },
-  // ];
+  const validateField = (name, value) => {
+    let error = "";
+    switch (name) {
+      case "contactNumber":
+        if (value && !/^\d{10}$/.test(value))
+          error = "Contact number must be exactly 10 digits.";
+        break;
+      case "currentCTC":
+      case "expectedCTC":
+        if (value && value < 0) error = "CTC cannot be negative.";
+        break;
+      case "totalExperience":
+      case "relevantExperience":
+        if (value && (value < 0 || value > 50))
+          error = "Experience must be between 0 and 50 years.";
+        break;
+      case "requiredTechnologiesRating":
+        if (value && (value < 1 || value > 5))
+          error = "Rating must be between 1 and 5.";
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitted Data:", formData);
-    const submissionPayload = {
-      formData,
-      userId,
-      jobId,
-    };
-    dispatch(submitFormData(submissionPayload));
-  };
-  useEffect(() => {
-    dispatch(updateFormData({ userId, jobId }));
-  }, [userId, jobId, dispatch]);
-
-  useEffect(() => {
-    if (successMessage || errorMessage) {
-      const timer = setTimeout(() => {
-        dispatch(resetForm()); // Reset the form and clear the messages
-      }, 5000); // Clear messages after 5 seconds
-
-      return () => clearTimeout(timer); // Cleanup the timer on unmount
+    if (Object.values(formError).some((error) => error !== "")) {
+      toast.error("Please fix the errors before submitting the form.");
+      return;
     }
-  }, [successMessage, errorMessage, dispatch]);
+    dispatch(submitFormData({ formData, userId, jobId ,userEmail}));
+  };
+
+  useEffect(() => {
+    dispatch(updateFormData({ userId, jobId ,userEmail}));
+  }, [userId, jobId, userEmail,dispatch]);
+
+  useEffect(() => {
+    if (successMessage) {
+      toast.success(
+        <Box sx={{ padding: 2 }}>
+          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+            {successMessage}
+          </Typography>
+          <Box sx={{ marginTop: 1 }}>
+            <Typography variant="body2">
+              <strong>Candidate ID:</strong> {candidateId}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Employee ID:</strong> {employeeId}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Job ID:</strong> {submittedJobId}
+            </Typography>
+          </Box>
+        </Box>,
+        { autoClose: 5000 }
+      );
+
+      setTimeout(() => {
+        dispatch(resetForm());
+      }, 5000);
+    }
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+    }
+  }, [
+    successMessage,
+    errorMessage,
+    candidateId,
+    employeeId,
+    submittedJobId,
+    dispatch,
+  ]);
+
+  const renderTextField = (name, label, options = {}) => (
+    <TextField
+      fullWidth
+      label={label}
+      name={name}
+      value={formData[name] || ""}
+      onChange={handleChange}
+      error={!!formError[name]}
+      helperText={formError[name]}
+      variant="outlined"
+      margin="normal"
+      {...options}
+    />
+  );
 
   return (
-    <Paper sx={{ padding: 4, maxWidth: 800, margin: "auto", marginTop: 4 }}>
+    <Paper sx={{ padding: 4, maxWidth: 1200, margin: "auto", marginTop: 4 }}>
+      <Typography variant="h5" gutterBottom>
+        Candidate Submission Form
+      </Typography>
+
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          {/* Personal Details */}
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Job Id"
-              name="jobId"
-              value={formData.jobId}
-              onChange={handleChange}
-              required
-              disabled
-            />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("fullName", "Full Name", { required: true })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Employee Id"
-              name="userId"
-              value={formData.userId}
-              onChange={handleChange}
-              required
-              disabled
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("candidateEmailId", "Candidate Email ID", {
+              required: true,
+            })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Full Name"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("contactNumber", "Contact Number", {
+              required: true,
+            })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Email ID"
-              name="candidateEmailId"
-              type="email"
-              value={formData.candidateEmailId}
-              onChange={handleChange}
-              required
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("currentOrganization", "Current Organization")}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Contact Number"
-              name="contactNumber"
-              type="number"
-              error={!!formError.contactNumber}
-              helperText={formError.contactNumber || ""}
-              value={formData.contactNumber}
-              onChange={handleChange}
-              required
-              inputProps={{
-                maxLength: 10, // Optional: Ensure users cannot input more than 10 digits
-              }}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("qualification", "Qualification")}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Current Organization"
-              name="currentOrganization"
-              value={formData.currentOrganization}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("totalExperience", "Total Experience (in years)", {
+              type: "number",
+            })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Qualification"
-              name="qualification"
-              value={formData.qualification}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField(
+              "relevantExperience",
+              "Relevant Experience (in years)",
+              { type: "number" }
+            )}
           </Grid>
-
-          {/* Experience and CTC */}
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Total Experience (years)"
-              name="totalExperience"
-              type="number"
-              value={formData.totalExperience}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("currentCTC", "Current CTC", { type: "number" })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Relevant Experience"
-              name="relevantExperience"
-              value={formData.relevantExperience}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("expectedCTC", "Expected CTC", { type: "number" })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Current CTC"
-              name="currentCTC"
-              type="number"
-              value={formData.currentCTC}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("noticePeriod", "Notice Period (in days)", {
+              type: "number",
+            })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Expected CTC"
-              name="expectedCTC"
-              type="number"
-              value={formData.expectedCTC}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("currentLocation", "Current Location")}
           </Grid>
-
-          {/* Location and Skills */}
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Notice Period"
-              name="noticePeriod"
-              value={formData.noticePeriod}
-              onChange={handleChange}
-            />
-            {/* <SelectDropdown
-              fullWidth
-              label="Notice Period"
-              name="noticePeriod"
-              options={dropdownOptions}
-              value={formData.noticePeriod}
-              onChange={handleChange}
-            /> */}
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("preferredLocation", "Preferred Location")}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Current Location"
-              name="currentLocation"
-              value={formData.currentLocation}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("skills", "Skills (comma-separated)")}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Preferred Location"
-              name="preferredLocation"
-              value={formData.preferredLocation}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField(
+              "communicationSkills",
+              "Communication Skills (rating out of 5)",
+              { type: "number" }
+            )}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Skills (comma separated)"
-              name="skills"
-              value={formData.skills}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField(
+              "requiredTechnologiesRating",
+              "Required Technologies Rating (1 to 5)",
+              { type: "number" }
+            )}
           </Grid>
-
-          {/* Feedback Section */}
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Communication Skills"
-              name="communicationSkills"
-              value={formData.communicationSkills}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            {renderTextField("overallFeedback", "Overall Feedback", {
+              multiline: true,
+              rows: 1,
+            })}
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Technologies Rating (1-5)"
-              name="requiredTechnologiesRating"
-              type="number"
-              value={formData.requiredTechnologiesRating}
-              onChange={handleChange}
-            />
+          <Grid item xs={12} sm={6} md={6} lg={4}>
+            <Box sx={{ mt: 2 }}>
+              <Input
+                type="file"
+                accept=".pdf,.docx"
+                onChange={handleFileChange}
+                fullWidth
+                required
+              />
+              <FormHelperText error={!!formError.resumeFile}>
+                {formError.resumeFile || "Upload Resume (PDF or DOCX)"}
+              </FormHelperText>
+            </Box>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Overall Feedback"
-              name="overallFeedback"
-              multiline
-              rows={1}
-              value={formData.overallFeedback}
-              onChange={handleChange}
-            />
-          </Grid>
-          {/* <Grid item xs={12} sm={6} md={4}>
-            <InputField
-              fullWidth
-              label="Zoom Link"
-              name="zoomLink"
-              value={formData.zoomLink}
-              onChange={handleChange}
-            />
-          </Grid> */}
-
-          {/* Submit Button */}
           <Grid item xs={12}>
             <Box display="flex" justifyContent="flex-end" gap={2}>
               <Button
-                type="button"
                 variant="outlined"
                 color="primary"
-                onClick={() => {
-                  dispatch(resetForm());
-                }}
+                onClick={() => dispatch(resetForm())}
+                disabled={loading}
               >
                 Cancel
               </Button>
@@ -325,19 +295,12 @@ const CandidateSubmissionForm = ({ jobId, userId }) => {
                 color="primary"
                 disabled={loading}
               >
-                {loading ? "Submitting..." : "Submit"}
+                {loading ? <CircularProgress size={20} /> : "Submit"}
               </Button>
             </Box>
           </Grid>
         </Grid>
       </form>
-      {/* Display Success/Error Messages */}
-      {successMessage && (
-        <Typography color="green">
-          {successMessage} - {candidateId}-{employeeId}-{jobId}
-        </Typography>
-      )}
-      {errorMessage && <Typography color="red">{errorMessage}</Typography>}
     </Paper>
   );
 };

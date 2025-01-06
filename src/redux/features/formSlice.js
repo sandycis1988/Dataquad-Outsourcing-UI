@@ -7,15 +7,13 @@ export const submitFormData = createAsyncThunk(
   "form/submit",
   async (formData, { rejectWithValue }) => {
     try {
-      console.log("Sending form data:", formData); 
+      console.log("Sending form data:", formData);
       const response = await axios.post(
         `${BASE_URL}/users/register`,
         formData,
         {
-         
           headers: {
             "Content-Type": "application/json",
-           // "Access-Control-Allow-Origin": "*",
           },
         }
       );
@@ -24,13 +22,12 @@ export const submitFormData = createAsyncThunk(
     } catch (error) {
       console.error("Error submitting form:", error.response);
 
-      // Check for specific error code 300 for duplicate userId or email
       const errorCode = error.response?.data?.error?.errorcode;
-      const errorMessage = error.response?.data?.error?.errormessage || "Error submitting form";
+      const errorMessage =
+        error.response?.data?.error?.errormessage || "Error submitting form";
 
-      // Prevent form submission if API errors occur
+      // Check for specific error code or default to a general error
       if (errorCode === "300") {
-        // Return the error message to reject the form submission
         return rejectWithValue(errorMessage);
       } else {
         return rejectWithValue("An unknown error occurred");
@@ -55,7 +52,7 @@ const initialState = {
     joiningDate: null,
     dob: null,
     roles: null,
-    general: null, // Add a general error field
+    general: null, // General error field
   },
   response: null,
   formData: {
@@ -67,10 +64,10 @@ const initialState = {
     personalemail: "",
     phoneNumber: "",
     designation: "",
-    gender: '',
+    gender: "",
     joiningDate: null,
     dob: null,
-    roles: ['EMPLOYEE'],
+    roles: ["EMPLOYEE"],
   },
 };
 
@@ -81,14 +78,11 @@ const formSlice = createSlice({
     // Update form data
     updateFormData: (state, action) => {
       const { name, value } = action.payload;
-
-      
-        state.formData[name] = value;
-     
+      state.formData[name] = value;
     },
 
-    // Clear form data
-    clearFormData(state) {
+    // Clear form data and reset errors
+    clearFormData: (state) => {
       state.formData = {
         userId: "",
         userName: "",
@@ -118,40 +112,62 @@ const formSlice = createSlice({
         dob: null,
         roles: null,
         general: null,
-      }; // Reset the error state to the initial structure
-      state.response = null; // Clear the response here
+      };
+      state.response = null;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(submitFormData.pending, (state) => {
         state.status = "loading";
-        state.error = null;
+
+        // Reset all errors on new submission attempt
+        Object.keys(state.error).forEach((key) => {
+          state.error[key] = null;
+        });
       })
       .addCase(submitFormData.fulfilled, (state, action) => {
-        if (action.payload && action.payload) {
-          state.status = action.payload.error ? "failed" : "succeeded";
-          state.response = action.payload.data
-            ? action.payload.data.data
-            : action.payload.error;
-          console.log("Log for registration success", action.payload);
+        const { success, message, data, error } = action.payload;
+        console.log(action.payload)
+
+        if (success) {
+          state.status = "succeeded";
+          state.response = {
+            message,
+            data, 
+          };
+        } else {
+          state.status = "failed";
+          state.error.general = error || "An unknown error occurred.";
         }
-        console.log("Log for registration success", action.payload);
+
+        console.log("Success Response:", action.payload);
       })
       .addCase(submitFormData.rejected, (state, action) => {
         state.status = "failed";
 
-        // If there is an error message, map it to the respective field
+        // Reset all error fields
+        Object.keys(state.error).forEach((key) => {
+          state.error[key] = null;
+        });
+
         if (action.payload) {
-          // Handle errors for duplicate userId or email
-          if (action.payload.includes("userId already exists") || action.payload.includes("email is already in use")) {
-            state.error.userId = action.payload; // You can display it as email error as well
-            state.error.email = action.payload; // If you want to handle it separately for email
-          } else {
-            state.error.general = action.payload; // General error message
+          // Map specific error messages to fields
+          if (action.payload.includes("userId already exists")) {
+            state.error.userId = "User ID already exists. Please choose a different one.";
+          }
+          if (action.payload.includes("email is already in use")) {
+            state.error.email = "Email is already in use. Please try another.";
+          }
+          // General error fallback
+          if (!state.error.userId && !state.error.email) {
+            state.error.general = action.payload;
+            console.log('general state ',action.payload);
+            
+            
           }
         } else {
-          state.error.general = "An unknown error occurred";
+          state.error.general = "An unknown error occurred. Please try again later.";
         }
       });
   },

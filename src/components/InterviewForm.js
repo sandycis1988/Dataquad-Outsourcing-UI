@@ -5,6 +5,7 @@ import {
   resetForm,
   submitInterviewForm,
   clearError,
+  interviewResponse,
 } from "../redux/features/interviewSheduleSlice";
 import {
   Button,
@@ -23,6 +24,8 @@ import {
 import MuiDateTimePicker from "../components/MuiComponents/MuiDatePicker"; // Import the new DateTimeField component
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { toast } from "react-toastify";
+
 dayjs.extend(isSameOrBefore);
 
 const InterviewForm = ({
@@ -32,14 +35,19 @@ const InterviewForm = ({
   candidateContactNo,
   clientName,
   userId,
-  emailId,
+  candidateEmailId,
+  userEmail,
   handleCloseInterviewDialog,
 }) => {
   const dispatch = useDispatch();
 
-  const { formData, isSubmitting, submissionSuccess, error,interviewResponse } = useSelector(
-    (state) => state.interviewForm
-  );
+  const {
+    formData,
+    isSubmitting,
+    submissionSuccess,
+    error,
+    interviewResponse,
+  } = useSelector((state) => state.interviewForm);
 
   const [dateError, setDateError] = useState("");
   const [formError, setFormError] = useState("");
@@ -56,7 +64,12 @@ const InterviewForm = ({
     );
     dispatch(updateFormField({ name: "clientName", value: clientName }));
     dispatch(updateFormField({ name: "userId", value: userId }));
-    dispatch(updateFormField({ name: "emailId", value: emailId }));
+    dispatch(
+      updateFormField({ name: "candidateEmailId", value: candidateEmailId })
+    );
+    dispatch(
+      updateFormField({ name: "userEmail", value: userEmail })
+    );
   }, [
     jobId,
     candidateId,
@@ -64,7 +77,8 @@ const InterviewForm = ({
     candidateContactNo,
     clientName,
     userId,
-    emailId,
+    userEmail,
+    candidateEmailId,
     dispatch,
   ]);
 
@@ -77,11 +91,11 @@ const InterviewForm = ({
     const now = dayjs(); // Current date and time
 
     if (fieldName === "interviewDateTime") {
-      if (newValue && dayjs(newValue).isSameOrBefore(now, "day")) {
-        setDateError("Interview Date & Time can't be in the past or today.");
+      if (newValue && dayjs(newValue).isBefore(now, "day")) {
+        setDateError("Interview Date can't be in the past.");
         return;
       } else {
-        setDateError("");
+        setDateError(""); // Clear any previous error
       }
 
       // Automatically set interviewScheduledTimestamp to current time when interviewDateTime is set
@@ -142,6 +156,23 @@ const InterviewForm = ({
   };
 
   useEffect(() => {
+    if (submissionSuccess && interviewResponse.success) {
+      // Show the toast notification with success message
+      toast.success(interviewResponse.message);
+  
+      // Optionally, show the interview details as a success message
+      if (interviewResponse.payload) {
+        toast.info(
+          `Interview scheduled for Candidate ID: ${interviewResponse.payload.candidateId}`
+        );
+      }
+      
+      // Reset form after success
+      dispatch(resetForm());
+    }
+  }, [submissionSuccess, interviewResponse, dispatch]);
+
+  useEffect(() => {
     if (submissionSuccess) {
       dispatch(resetForm());
     }
@@ -164,17 +195,24 @@ const InterviewForm = ({
         gap: 2,
       }}
     >
-      
       {submissionSuccess && (
         <>
           <Alert severity="success">Form submitted successfully!</Alert>
           {interviewResponse && (
             <Box mt={2}>
               <Typography variant="h6">Interview Scheduled:</Typography>
-              <Typography><strong>Candidate ID:</strong> {interviewResponse.candidateId}</Typography>
-              <Typography><strong>User Email:</strong> {interviewResponse.userEmail}</Typography>
-              <Typography><strong>Email ID:</strong> {interviewResponse.emailId}</Typography>
-              <Typography><strong>Client Email:</strong> {interviewResponse.clientEmail}</Typography>
+              <Typography>
+                <strong>Candidate ID:</strong> {interviewResponse.candidateId}
+              </Typography>
+              <Typography>
+                <strong>User Email:</strong> {interviewResponse.userEmail}
+              </Typography>
+              <Typography>
+                <strong>Email ID:</strong> {interviewResponse.emailId}
+              </Typography>
+              <Typography>
+                <strong>Client Email:</strong> {interviewResponse.clientEmail}
+              </Typography>
             </Box>
           )}
         </>
@@ -235,12 +273,12 @@ const InterviewForm = ({
         <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
             label="Candidate Email"
-            name="candidateEmail"
+            name="candidateEmailId"
             type="email"
-            value={formData.candidateEmail || ""}
+            value={formData.candidateEmailId || ""}
             onChange={handleChange}
             fullWidth
-            //disabled
+            disabled
             variant="filled"
           />
         </Grid>
@@ -252,7 +290,7 @@ const InterviewForm = ({
             value={formData.clientName || ""}
             onChange={handleChange}
             fullWidth
-            disabled
+            autoComplete="off"
             variant="filled"
           />
         </Grid>
@@ -289,7 +327,7 @@ const InterviewForm = ({
             onChange={handleChange}
             fullWidth
             variant="filled"
-            // disabled
+            disabled
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={4}>
@@ -329,6 +367,9 @@ const InterviewForm = ({
               handleDateTimeChange("interviewDateTime", newValue)
             }
             required
+            TextFieldProps={{
+              size: "small", // Makes the input smaller
+            }}
           />
           {dateError && <Typography color="error">{dateError}</Typography>}
         </Grid>
@@ -360,14 +401,14 @@ const InterviewForm = ({
               onChange={handleChange}
             >
               <FormControlLabel
-                value="L1"
+                value="Internal"
                 control={<Radio />}
-                label="L1 (Internal)"
+                label="Internal"
               />
               <FormControlLabel
-                value="L2"
+                value="External"
                 control={<Radio />}
-                label="L2 (External)"
+                label="External"
               />
             </RadioGroup>
           </FormControl>

@@ -31,7 +31,7 @@ const initialState = {
     candidateId: "",
     candidateFullName: "",
     candidateContactNo: "",
-    emailId: '',
+    candidateEmailId: '',
     userEmail: "",
     userId: "",
     interviewDateTime: null,

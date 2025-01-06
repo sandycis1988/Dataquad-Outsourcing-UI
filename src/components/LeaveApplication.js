@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -8,10 +8,11 @@ import {
   Alert,
   MenuItem,
 } from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import BASE_URL from "../redux/apiConfig";
+import BASE_URL from "../redux/apiConfig"; // Import your base URL for API requests
 import dayjs from "dayjs";
+import { toast } from "react-toastify"; // Import toast for notifications
+import { useSelector } from "react-redux";
 
 const LeaveApplication = () => {
   const [formData, setFormData] = useState({
@@ -20,36 +21,52 @@ const LeaveApplication = () => {
     days: "",
     leaveType: "",
     userId: "",
-    managerId: "",
+    managerEmail: "",
+    description: "", // New field added here
   });
-  const [formError, setFormError] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); // State for success message
   const { user } = useSelector((state) => state.auth);
 
-  const dispatch = useDispatch();
-  const { employeesList, fetchStatus, fetchError } = useSelector(
-    (state) => state.employees || {}
+  console.log('userId from the leave application ',user)
+
+  const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const [employeesList, setEmployeesList] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [fetchError, setFetchError] = useState("");
+
+  useEffect(() => {
+    // Update userId if user changes
+    setFormData((prevData) => ({
+      ...prevData,
+      userId: user||'',
+    }));
+  }, [user]);
+
+ 
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setFetchStatus("loading");
+      try {
+        const response = await axios.get(`${BASE_URL}/users/employee`);
+        setEmployeesList(response.data);
+        console.log('manager data log ---------',response.data);
+        
+        setFetchStatus("succeeded");
+      } catch (error) {
+        setFetchStatus("failed");
+        setFetchError(error.message);
+        toast.error("Error fetching employee data.");
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  const filteredEmployees = employeesList.filter(
+    (employee) => employee.roles === "SUPERADMIN"
   );
-  const [filterEmployees, setFilterEmployees] = useState([]);
-  const userId = user;
-
-  useEffect(() => {
-    if (userId) {
-      setFormData((prevData) => ({
-        ...prevData,
-        userId: userId,
-      }));
-    }
-  }, [userId]);
-
-  const filteredEmployees = useMemo(() => {
-    return employeesList.filter((employee) => employee.roles === "SUPERADMIN");
-  }, [employeesList]);
-
-  useEffect(() => {
-    setFilterEmployees(filteredEmployees);
-    console.log("Filtered employees:", filteredEmployees);
-  }, [filteredEmployees]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +94,8 @@ const LeaveApplication = () => {
       !formData.startDate ||
       !formData.endDate ||
       !formData.leaveType ||
-      !formData.managerId
+      !formData.managerEmail ||
+      !formData.description // Ensure this field is validated
     ) {
       setFormError("Please fill out all required fields.");
       return;
@@ -85,12 +103,8 @@ const LeaveApplication = () => {
     setFormError("");
 
     const leaveApplicationData = {
-      startDate: formData.startDate,
-      endDate: formData.endDate,
+      ...formData,
       noOfDays: formData.days,
-      leaveType: formData.leaveType,
-      userId: formData.userId,
-      managerId: formData.managerId,
     };
 
     try {
@@ -98,27 +112,29 @@ const LeaveApplication = () => {
         `${BASE_URL}/users/save`,
         leaveApplicationData
       );
-      if (response.status === 200) {
+      if (response.status === 201) {
+        const successData = response.data; // Assuming the API returns a success message in the response data
+
+        // Update success message with API response
         setSuccessMessage(
-          `Leave application submitted successfully from ${dayjs(
-            formData.startDate
-          ).format("DD MMM YYYY")} to ${dayjs(formData.endDate).format(
+          `Leave application submitted successfully from ${dayjs(formData.startDate).format(
             "DD MMM YYYY"
-          )} (${formData.days} days).`
+          )} to ${dayjs(formData.endDate).format("DD MMM YYYY")} (${formData.days} days).`
         );
         setFormData({
           startDate: "",
           endDate: "",
           days: "",
           leaveType: "",
-          userId: userId,
-          managerId: "",
+          userId:"",
+          managerEmail: "",
+          description: "", // Reset the description field
         });
-      } else {
-        setFormError("Failed to submit the leave application.");
-      }
+        toast.success(successData.message );
+      } 
     } catch (error) {
       setFormError(error.message || "An error occurred.");
+      toast.error("An error occurred while submitting your leave.");
     }
   };
 
@@ -148,18 +164,19 @@ const LeaveApplication = () => {
 
         <Grid item xs={12} sm={6}>
           <TextField
-            label="Manager ID"
-            name="managerId"
-            value={formData.managerId}
+            label="Reporting Manager"
+            name="managerEmail"
+            value={formData.managerEmail}
             onChange={handleChange}
             fullWidth
             variant="filled"
             required
             select
           >
-            {filterEmployees.length > 0 ? (
-              filterEmployees.map((manager) => (
-                <MenuItem key={manager.employeeId} value={manager.employeeId}>
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map((manager) => (
+                
+                <MenuItem key={manager.employeeId} value={manager.email}>
                   {manager.employeeName}
                 </MenuItem>
               ))
@@ -224,6 +241,20 @@ const LeaveApplication = () => {
             <MenuItem value="Casual Leave">Casual Leave</MenuItem>
             <MenuItem value="Annual">Annual</MenuItem>
           </TextField>
+        </Grid>
+
+        <Grid item xs={12}>
+          <TextField
+            label="Leave Description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            fullWidth
+            variant="filled"
+            required
+            multiline
+            rows={3}
+          />
         </Grid>
       </Grid>
 

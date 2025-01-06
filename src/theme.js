@@ -159,6 +159,27 @@ const theme = createTheme({
     "0px 1px 3px rgba(0,0,0,0.12)", // Light shadows for depth
     "0px 4px 6px rgba(0,0,0,0.1)",
     "0px 10px 15px rgba(0,0,0,0.2)",
+    "0px 12px 24px rgba(0,0,0,0.3)", // Shadow 4
+    "0px 15px 30px rgba(0,0,0,0.4)", // Shadow 5
+    "0px 20px 40px rgba(0,0,0,0.5)", // Shadow 6
+    "0px 25px 50px rgba(0,0,0,0.6)", // Shadow 7
+    "0px 30px 60px rgba(0,0,0,0.7)", // Shadow 8
+    "0px 35px 70px rgba(0,0,0,0.8)", // Shadow 9
+    "0px 40px 80px rgba(0,0,0,0.9)", // Shadow 10
+    "0px 45px 90px rgba(0,0,0,1)", // Shadow 11
+    "0px 50px 100px rgba(0,0,0,1.1)", // Shadow 12
+    "0px 55px 110px rgba(0,0,0,1.2)", // Shadow 13
+    "0px 60px 120px rgba(0,0,0,1.3)", // Shadow 14
+    "0px 65px 130px rgba(0,0,0,1.4)", // Shadow 15
+    "0px 70px 140px rgba(0,0,0,1.5)", // Shadow 16
+    "0px 75px 150px rgba(0,0,0,1.6)", // Shadow 17
+    "0px 80px 160px rgba(0,0,0,1.7)", // Shadow 18
+    "0px 85px 170px rgba(0,0,0,1.8)", // Shadow 19
+    "0px 90px 180px rgba(0,0,0,1.9)", // Shadow 20
+    "0px 95px 190px rgba(0,0,0,2)", // Shadow 21
+    "0px 100px 200px rgba(0,0,0,2.1)", // Shadow 22
+    "0px 105px 210px rgba(0,0,0,2.2)", // Shadow 23
+    "0px 110px 220px rgba(0,0,0,2.3)", // Shadow 24
   ],
 });
 

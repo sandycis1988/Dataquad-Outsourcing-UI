@@ -4,36 +4,46 @@ import SignUpForm from "./components/common/SignUpForm";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import { useSelector } from "react-redux";
-
+import { ToastContainer } from "react-toastify";  // Import ToastContainer
 import JobForm from "./components/Requirements/JobForm";
 import LeaveApplication from "./components/LeaveApplication";
-
-
-
+import InterviewForm from "./components/InterviewForm";
+import CandidateSubmissionForm from "./components/CandidateSubmissionFrom";
 
 function App() {
   const { roles } = useSelector((state) => state.auth);
 
-  // console.log("User roles:", roles);
   return (
     <Router>
+      {/* ToastContainer added outside Routes */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={5000} 
+        hideProgressBar={false} 
+        newestOnTop={false} 
+        closeOnClick 
+        rtl={false} 
+        pauseOnFocusLoss 
+        draggable 
+        pauseOnHover 
+      />
+
       <Routes>
-        <Route path="/dashboard" element={<DashboardPage/>} />
-        
-
-
+        {/* Default Route */}
+        <Route path="/" element={<SignUpForm />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Protected Routes based on roles */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute role="ADMIN">
+            <ProtectedRoute role={["ADMIN", "EMPLOYEE", "SUPERADMIN"]}>
               <DashboardPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard"
+          path="/employee-dashboard"
           element={
             <ProtectedRoute role="EMPLOYEE">
               <DashboardPage />
@@ -41,7 +51,7 @@ function App() {
           }
         />
         <Route
-          path="/dashboard"
+          path="/superadmin-dashboard"
           element={
             <ProtectedRoute role="SUPERADMIN">
               <DashboardPage />
@@ -49,12 +59,11 @@ function App() {
           }
         />
 
-        {/* Default redirect to Login */}
-        <Route path="/" element={<SignUpForm />} />
+        {/* Other Routes */}
         <Route path="/jobform" element={<JobForm />} />
         <Route path="/leave" element={<LeaveApplication />} />
-
-      
+        <Route path="/interview" element={<InterviewForm />} />
+        <Route path="/candidate-submission" element={<CandidateSubmissionForm />} />
       </Routes>
     </Router>
   );

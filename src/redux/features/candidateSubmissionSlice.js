@@ -1,4 +1,3 @@
-// src/store/candidateSubmissionSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import BASE_URL from "../apiConfig";
@@ -21,56 +20,113 @@ const initialState = {
     currentLocation: "",
     preferredLocation: "",
     skills: [],
+    resumeFile: null,
+    resumeFilePath: "",
     communicationSkills: "",
     requiredTechnologiesRating: "",
     overallFeedback: "",
+    userEmail:'',
   },
-  successMessage: "",
-  candidateId:'',
-  employeeId:'',
-  jobId:'',
-  errorMessage: "",
   loading: false,
+  successMessage: "",
+  errorMessage: "",
+  candidateId: "",
+  employeeId: "",
+  jobId: "",
 };
 
-// Async thunk for API submission
+// Helper function to validate file type
+const isValidFileType = (file) => {
+  const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  return file && validTypes.includes(file.type);
+};
+
+// Form submission thunk
 export const submitFormData = createAsyncThunk(
-  "candidateSubmission/submitFormData",
-  async ({ formData, userId, jobId }, { rejectWithValue }) => {
+  "candidateSubmission/submit",
+  async ({ formData, userId, jobId ,userEmail}, { rejectWithValue }) => {
     try {
-      // Actual API call using axios
+      // Validate file type before submission
+      if (formData.resumeFile && !isValidFileType(formData.resumeFile)) {
+        return rejectWithValue("Invalid file type. Only PDF and DOCX are allowed.");
+      }
+
+      // Create FormData for file upload
+      const form = new FormData();
+
+      // Append form fields
+      Object.keys(formData).forEach((key) => {
+        // Skip resumeFile and resumeFilePath as they need special handling
+        if (key !== "resumeFile" && key !== "resumeFilePath" && formData[key] !== null) {
+          // Handle arrays (like skills)
+          if (Array.isArray(formData[key])) {
+            form.append(key, JSON.stringify(formData[key]));
+          } else {
+            form.append(key, formData[key].toString());
+          }
+        }
+      });
+
+      // Append file if present and valid
+      if (formData.resumeFile) {
+        form.append("resumeFile", formData.resumeFile);
+      }
+      if (formData.resumeFilePath) {
+        form.append("resumeFilePath", formData.resumeFilePath);
+      }
+
+      
+      // Make API call
       const response = await axios.post(
         `${BASE_URL}/candidate/submit`,
+        form,
         {
-          ...formData,
-          userId, // Include userId
-          jobId, // Include jobId
-        },
-        {
-          // withCredentials: true,
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "multipart/form-data",
           },
         }
-      ); // Replace with your API endpoint
-      return response.data; // Assuming your API returns the success message or response data
+      );
+
+      return {
+        message: response.data.message,
+        candidateId: response.data.candidateId,
+        employeeId: response.data.employeeId,
+        jobId: response.data.jobId
+      };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message); // Handling error
+      // Handle API error response
+      if (error.response?.data?.message) {
+        return rejectWithValue({
+          message: error.response.data.message,
+          candidateId: null,
+          employeeId: null,
+          jobId: null
+        });
+      }
+      // Handle other errors
+      return rejectWithValue({
+        message: "Failed to submit candidate data. Please try again.",
+        candidateId: null,
+        employeeId: null,
+        jobId: null
+      });
     }
   }
 );
 
-// Slice
+// Create the slice
 const candidateSubmissionSlice = createSlice({
   name: "candidateSubmission",
   initialState,
   reducers: {
-    updateFormData(state, action) {
-      state.formData = { ...state.formData, ...action.payload };
-      
+    updateFormData: (state, action) => {
+      state.formData = {
+        ...state.formData,
+        ...action.payload,
+      };
     },
-    resetForm(state) {
+    
+    resetForm: (state) => {
       state.formData = initialState.formData;
       state.successMessage = "";
       state.errorMessage = "";
@@ -83,26 +139,26 @@ const candidateSubmissionSlice = createSlice({
     builder
       .addCase(submitFormData.pending, (state) => {
         state.loading = true;
-        state.successMessage = "";
         state.errorMessage = "";
+        state.successMessage = "";
       })
       .addCase(submitFormData.fulfilled, (state, action) => {
         state.loading = false;
-        state.successMessage = action.payload.message; // Message from API
-        state.candidateId = action.payload.candidateId; // Candidate ID
-        state.employeeId = action.payload.employeeId; // Employee ID
+        state.successMessage = action.payload.message;
+        state.candidateId = action.payload.candidateId;
+        state.employeeId = action.payload.employeeId;
         state.jobId = action.payload.jobId;
-        state.errorMessage = "";
-        state.formData = initialState.formData;
+        state.formData = initialState.formData; // Reset form after success
       })
       .addCase(submitFormData.rejected, (state, action) => {
         state.loading = false;
-        state.errorMessage =
-          action.payload || "Failed to submit form. Please try again.";
+        state.errorMessage = action.payload.message;
+        state.candidateId = action.payload.candidateId;
+        state.employeeId = action.payload.employeeId;
+        state.jobId = action.payload.jobId;
       });
   },
 });
 
 export const { updateFormData, resetForm } = candidateSubmissionSlice.actions;
-
 export default candidateSubmissionSlice.reducer;

@@ -36,15 +36,14 @@ const initialState = {
     noticePeriod: "",
     relevantExperience: "",
     qualification: "",
-    requirementAddedTimeStamp: "",
     recruiterIds: "",
     status: "Open",
     remark: "",
   },
   status: "idle", // idle, loading, succeeded, failed
   error: null,
-  successMessage: null, // New field for success messages
-  jobPostings: null, // Start with null to store response data
+  jobPostingSuccessResponse: null, // New field for success messages
+  
 };
 
 // Slice for managing job form state
@@ -60,6 +59,11 @@ const jobFormSlice = createSlice({
       } else {
         state.formData[name] = value;
       }
+      if (name === "jobDescription") {
+        // Check length of jobDescription
+        console.log('Job description length:', value.length);
+      }
+      
     },
     resetForm: (state) => {
       // Reset formData to the initial state
@@ -79,12 +83,13 @@ const jobFormSlice = createSlice({
       .addCase(postJobRequirement.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.error = null;
-        state.successMessage = action.payload.message 
-        state.jobPostings = action.payload; 
+        console.log('job form success response---------- ',action.payload)
+        state.jobPostingSuccessResponse = action.payload
         state.formData = { ...initialState.formData }; 
       })
       .addCase(postJobRequirement.rejected, (state, action) => {
         state.status = "failed";
+        console.log('job form error response---------- ',action.payload)
         state.error = action.payload; // Capture the error message
         state.successMessage = null;
       });

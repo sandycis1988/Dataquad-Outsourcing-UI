@@ -28,8 +28,6 @@ const Submissions = () => {
   const { user } = useSelector((state) => state.auth);
   const userId = user;
 
-  console.log("user id ----------djsnizhnd -----", userId);
-
   useEffect(() => {
     if (!userId) return;
 
@@ -39,14 +37,12 @@ const Submissions = () => {
           `${BASE_URL}/candidate/submissions/${userId}`,
           {
             headers: {
-              "Content-Type": "application/json", // Example header
+              "Content-Type": "application/json",
             },
           }
         );
 
-        console.log("user data from api ----", response.data);
         const userData = response.data || [];
-
         setTotalCount(userData.length || 0);
 
         const updatedData = userData.map((item) => ({
@@ -65,7 +61,7 @@ const Submissions = () => {
     };
 
     fetchSubmissionData();
-  }, [userId, page, rowsPerPage]);
+  }, [userId]);
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
@@ -73,13 +69,11 @@ const Submissions = () => {
 
   const handleRowsPerPageChange = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(0); // Reset to the first page on rows per page change
   };
 
   const handleOpenInterviewDialog = (candidate) => {
-    console.log("Selected Candidate:", candidate);
     setSelectedCandidate(candidate);
-    console.log('')
     setOpenInterviewDialog(true);
   };
 
@@ -88,7 +82,48 @@ const Submissions = () => {
     setSelectedCandidate(null);
   };
 
+  const downloadResume = async (candidateId) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/candidate/download-resume/${candidateId}`,
+        {
+          responseType: "blob", // Important for file download
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const blob = new Blob([response.data], { type: response.data.type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "resume.pdf"; // You can adjust this if you get the filename from the response
+      link.click();
+    } catch (error) {
+      console.error("Error downloading resume:", error);
+    }
+  };
+
   const onCellRender = (row, header) => {
+    if (header === "resumeFilePath" && row[header]) {
+      return (
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            downloadResume(row.candidateId);
+          }}
+          style={{
+            color: "blue",
+            textDecoration: "underline",
+            cursor: "pointer",
+          }}
+        >
+          Download Resume
+        </a>
+      );
+    }
+
     if (header === "Interview") {
       return (
         <Link
@@ -100,6 +135,7 @@ const Submissions = () => {
         </Link>
       );
     }
+
     return row[header];
   };
 
@@ -118,10 +154,13 @@ const Submissions = () => {
     );
   }
 
+  // Calculate paginated data
+  const paginatedData = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
   return (
     <>
       <ReusableTable
-        data={data}
+        data={paginatedData} // Use paginated data here
         headers={headers}
         page={page}
         rowsPerPage={rowsPerPage}
@@ -173,7 +212,8 @@ const Submissions = () => {
             candidateContactNo={selectedCandidate?.contactNumber}
             clientName={selectedCandidate?.currentOrganization}
             userId={selectedCandidate?.userId}
-            emailId={selectedCandidate?.emailId}  
+            candidateEmailId={selectedCandidate?.candidateEmailId}
+            userEmail={selectedCandidate?.userEmail}
             handleCloseInterviewDialog={handleCloseInterviewDialog}
           />
         </DialogContent>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -16,6 +15,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
+import { toast, ToastContainer } from "react-toastify";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import SignIn from "./SignIn";
 import SignUpFromLeftSide from "./SignUpFromLeftSide";
@@ -26,7 +26,8 @@ import {
   clearFormData,
 } from "../../redux/features/formSlice";
 import { useNavigate } from "react-router-dom";
-import LoginIcon from '@mui/icons-material/Login';
+import LoginIcon from "@mui/icons-material/Login";
+import "react-toastify/dist/ReactToastify.css";
 
 const SignUpForm = () => {
   const [showAlert, setShowAlert] = useState(false);
@@ -59,6 +60,7 @@ const SignUpForm = () => {
 
   // Validation regex
   // const userIdRegex = /^DQIND\d{2,4}$/;
+  const personalEmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@dataqinc\.com$/;
   const phoneRegex = /^[0-9]{10}$/;
   const passwordRegex =
@@ -80,29 +82,43 @@ const SignUpForm = () => {
       ? ""
       : "Please enter a valid email (example@dataqinc.com)";
 
-  const validatePhoneNumber = (phoneNumber) =>
-    phoneRegex.test(phoneNumber) ? "" : "Phone number must be 10 digits";
+  const validatePhoneNumber = (phoneNumber) => {
+    // Remove all non-digit characters
+    const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+
+    // Check if the cleaned phone number has exactly 10 digits
+    if (cleanedPhoneNumber.length !== 10) {
+      return "Phone number must be exactly 10 digits.";
+    }
+
+    return "";
+  };
+
+  const validatePersonalEmail = (personalemail) =>
+    personalEmailRegex.test(personalemail)
+      ? ""
+      : "Please enter a valid personal email like example@gmail.com";
 
   const validateGender = (gender) => (gender ? "" : "Please select a gender");
 
   const validateDOB = (dob) => {
     if (!dob) return "Date of birth is required"; // Check if DOB is empty
-  
+
     let today = new Date();
     let birthDate = new Date(dob);
-  
+
     if (birthDate > today) return "Date of birth cannot be in the future";
-  
+
     let age = today.getFullYear() - birthDate.getFullYear();
     let monthDifference = today.getMonth() - birthDate.getMonth();
-  
+
     if (
       monthDifference < 0 ||
       (monthDifference === 0 && today.getDate() < birthDate.getDate())
     ) {
       age--;
     }
-  
+
     return "";
   };
 
@@ -132,6 +148,8 @@ const SignUpForm = () => {
         return validateUserName(value);
       case "email":
         return validateEmail(value);
+      case "personalemail":
+        return validatePersonalEmail(value);
       case "phoneNumber":
         return validatePhoneNumber(value);
       case "gender":
@@ -207,13 +225,51 @@ const SignUpForm = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (status === "loading") {
+      toast.info("Submitting form... Please wait."); // Loading toast
+    }
+
+    if (status === "succeeded" && response) {
+      const { userId, email } = response.data;
+      const customSuccessStyle = {
+        backgroundColor: "#B0EBB4", // Green background
+        color: "#fff", // White text
+        fontSize: "16px", // Font size
+        padding: "10px 20px", // Padding
+        borderRadius: "5px", // Border radius for rounded corners
+      };
+
+      toast.success(
+        <Box>
+          <Typography variant="h6">Created Successfully!</Typography>
+          <Typography variant="body2">UserID: {userId}</Typography>
+          <Typography variant="body2">Email: {email}</Typography>
+        </Box>,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: true,
+          style: customSuccessStyle, // Apply the custom styles
+        }
+      );
+      dispatch(clearFormData());
+    }
+
+    if (status === "failed" && error.general) {
+      toast.error(`Error: ${error.general}`); // Error toast
+    }
+  }, [status, response, error, dispatch]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-  
+
+    // Form validation
     const errors = {
       userId: validateUserId(formData.userId),
       userName: validateUserName(formData.userName),
       email: validateEmail(formData.email),
+      personalemail: validatePersonalEmail(formData.personalemail),
       phoneNumber: validatePhoneNumber(formData.phoneNumber),
       gender: validateGender(formData.gender),
       dob: validateDOB(formData.dob),
@@ -221,40 +277,15 @@ const SignUpForm = () => {
       password: validatePassword(formData.password),
       confirmPassword: validateConfirmPassword(formData.confirmPassword),
     };
-  
-    // If there are client-side validation errors
+
     if (Object.values(errors).some((error) => error !== "")) {
       setFormError(errors);
       return;
     }
-  
-    try {
-      const result = await dispatch(submitFormData(formData)).unwrap();
-  
-      // Check server-side errors
-      if (result.error) {
-        setFormError({
-          ...errors,
-          email: result.error.includes("email") ? "Email is already in use" : "",
-          userId: result.error.includes("userId") ? "User ID is already taken" : "",
-        });
-        return;
-      }
-  
-      // Clear form on success
-      dispatch(clearFormData());
-      setFormError({}); // Clear all errors
-    } catch (error) {
-      console.error("Submission failed:", error);
-  
-      // Set a general error if submission fails unexpectedly
-      setFormError({
-        ...errors,
-        general: "An error occurred during submission. Please try again later.",
-      });
-    }
+
+    // Dispatch the form data
+    dispatch(submitFormData(formData));
   };
-  
 
   // Clear the form
 
@@ -264,7 +295,7 @@ const SignUpForm = () => {
 
   // timer for the registration success message
   useEffect(() => {
-    if (status === "succeeded"||  status === "failed" && response) {
+    if (status === "succeeded" || (status === "failed" && response)) {
       setShowAlert(true);
 
       setFormData({
@@ -279,18 +310,18 @@ const SignUpForm = () => {
         gender: "",
         joiningDate: "",
         dob: "",
-        roles: ['EMPLOYEE'],
+        roles: ["EMPLOYEE"],
       });
 
       const timer = setTimeout(() => {
         setShowAlert(false);
-        dispatch(clearFormData())
+        dispatch(clearFormData());
         setIsSignIn(true);
-      }, 2000);
-      
+      }, 3000);
+
       return () => clearTimeout(timer);
     }
-  }, [status, response,navigate]);
+  }, [status, response, navigate]);
 
   const isFormValid = Object.values(formError).every((error) => error === "");
 
@@ -308,7 +339,7 @@ const SignUpForm = () => {
       gender: "",
       joiningDate: "",
       dob: "",
-      roles: ['EMPLOYEE'],
+      roles: ["EMPLOYEE"],
     });
 
     setFormError({});
@@ -363,21 +394,29 @@ const SignUpForm = () => {
             <SignIn />
           ) : (
             <>
-              {(showAlert && status === "succeeded" || status === "failed") && response && (
-                <Alert severity={status === "succeeded" ? "success" : "error"}>
+              {showAlert && response && (
+                <Alert
+                  severity={status === "succeeded" ? "success" : "error"}
+                  sx={{ mb: 2 }}
+                >
                   {status === "succeeded" ? (
                     <>
-                      Registration Successful! User ID: {response?.data?.userId}
-                      , Email: {response?.data?.email}
+                      Registration Successful! <br />
+                      <strong>User ID:</strong> {response?.data?.userId},{" "}
+                      <strong>Email:</strong> {response?.data?.email}
                     </>
                   ) : (
                     <>
                       Registration Failed:{" "}
-                      {response?.error?.errormessage || "Unknown error occurred"}
+                      {response?.error?.errormessage ||
+                        "An unknown error occurred."}
+                      <br />
+                      <strong>Error Code:</strong> {response?.error?.errorcode}
                     </>
                   )}
                 </Alert>
               )}
+
               <Typography
                 variant="h4"
                 component="h1"
@@ -386,7 +425,6 @@ const SignUpForm = () => {
                 sx={{
                   color: theme.palette.text.primary,
                   fontSize: { xs: "1rem", sm: "1.5rem", md: "2rem" },
-                  
                 }}
               >
                 Sign up
@@ -396,7 +434,7 @@ const SignUpForm = () => {
                   {/* User ID Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="User ID"
+                      label="Employee ID"
                       name="userId"
                       type="text"
                       value={formData.userId}
@@ -411,7 +449,7 @@ const SignUpForm = () => {
                   {/* User Name Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="User Name"
+                      label="Employee Name"
                       name="userName"
                       type="text"
                       value={formData.userName}
@@ -426,7 +464,7 @@ const SignUpForm = () => {
                   {/* Email Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Email"
+                      label="Company Email"
                       name="email"
                       type="email"
                       value={formData.email}
@@ -441,7 +479,7 @@ const SignUpForm = () => {
                   {/* Personal Email Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Personal Email"
+                      label="Employee Personal Email"
                       name="personalemail"
                       type="email"
                       value={formData.personalemail}
@@ -471,7 +509,7 @@ const SignUpForm = () => {
                   {/* Designation Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Designation"
+                      label="Employee Designation"
                       name="designation"
                       type="text"
                       value={formData.designation}
@@ -641,16 +679,25 @@ const SignUpForm = () => {
           >
             {isSignIn ? (
               <>
-                <PersonAddIcon fontSize="small" sx={{ marginRight: "2px", padding: "2px" }}  /> Register
+                <PersonAddIcon
+                  fontSize="small"
+                  sx={{ marginRight: "2px", padding: "2px" }}
+                />{" "}
+                Register
               </>
             ) : (
               <>
-                <LoginIcon fontSize="small" sx={{ marginRight: "2px", padding: "2px" }} /> LogIn
+                <LoginIcon
+                  fontSize="small"
+                  sx={{ marginRight: "2px", padding: "2px" }}
+                />{" "}
+                LogIn
               </>
             )}
           </Button>
         </Box>
       </Grid>
+      <ToastContainer />
     </Grid>
   );
 };
