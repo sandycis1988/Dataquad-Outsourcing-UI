@@ -15,10 +15,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { toast, ToastContainer } from "react-toastify";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import SignIn from "./SignIn";
-import SignUpFromLeftSide from "./SignUpFromLeftSide";
+
 import { useSelector, useDispatch } from "react-redux";
 import {
   submitFormData,
@@ -26,10 +23,9 @@ import {
   clearFormData,
 } from "../../redux/features/formSlice";
 import { useNavigate } from "react-router-dom";
-import LoginIcon from "@mui/icons-material/Login";
-import "react-toastify/dist/ReactToastify.css";
 
-const SignUpForm = () => {
+
+const AddUser = () => {
   const [showAlert, setShowAlert] = useState(false);
   const navigate = useNavigate();
   const { status, error, response } = useSelector((state) => state.form || {});
@@ -38,7 +34,6 @@ const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSignIn, setIsSignIn] = useState(true);
-
   const [formData, setFormData] = useState({
     userId: "",
     userName: "",
@@ -60,7 +55,6 @@ const SignUpForm = () => {
 
   // Validation regex
   // const userIdRegex = /^DQIND\d{2,4}$/;
-  const personalEmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   const emailRegex = /^[a-zA-Z0-9._%+-]+@dataqinc\.com$/;
   const phoneRegex = /^[0-9]{10}$/;
   const passwordRegex =
@@ -82,35 +76,21 @@ const SignUpForm = () => {
       ? ""
       : "Please enter a valid email (example@dataqinc.com)";
 
-  const validatePhoneNumber = (phoneNumber) => {
-    // Remove all non-digit characters
-    const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
-
-    // Check if the cleaned phone number has exactly 10 digits
-    if (cleanedPhoneNumber.length !== 10) {
-      return "Phone number must be exactly 10 digits.";
-    }
-
-    return "";
-  };
-
-  const validatePersonalEmail = (personalemail) =>
-    personalEmailRegex.test(personalemail)
-      ? ""
-      : "Please enter a valid personal email like example@gmail.com";
+  const validatePhoneNumber = (phoneNumber) =>
+    phoneRegex.test(phoneNumber) ? "" : "Phone number must be 10 digits";
 
   const validateGender = (gender) => (gender ? "" : "Please select a gender");
 
   const validateDOB = (dob) => {
     if (!dob) return "Date of birth is required"; // Check if DOB is empty
 
-    let today = new Date();
-    let birthDate = new Date(dob);
+    const today = new Date();
+    const birthDate = new Date(dob);
 
     if (birthDate > today) return "Date of birth cannot be in the future";
 
-    let age = today.getFullYear() - birthDate.getFullYear();
-    let monthDifference = today.getMonth() - birthDate.getMonth();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
 
     if (
       monthDifference < 0 ||
@@ -124,27 +104,11 @@ const SignUpForm = () => {
 
   const validateJoiningDate = (joiningDate, dob) => {
     if (!joiningDate) return "Joining date is required";
-
     const birthDate = new Date(dob);
     const joinDate = new Date(joiningDate);
-    const currentDate = new Date();
-
-    // Ensure joining date is after the date of birth
     if (joinDate <= birthDate) {
       return "Joining date must be after date of birth";
     }
-
-    // Calculate the one-month range
-    const oneMonthBefore = new Date();
-    oneMonthBefore.setMonth(currentDate.getMonth() - 1);
-
-    const oneMonthAfter = new Date();
-    oneMonthAfter.setMonth(currentDate.getMonth() + 1);
-
-    if (joinDate < oneMonthBefore || joinDate > oneMonthAfter) {
-      return "Joining date must be within one month before or after today's date";
-    }
-
     return "";
   };
 
@@ -164,8 +128,6 @@ const SignUpForm = () => {
         return validateUserName(value);
       case "email":
         return validateEmail(value);
-      case "personalemail":
-        return validatePersonalEmail(value);
       case "phoneNumber":
         return validatePhoneNumber(value);
       case "gender":
@@ -241,51 +203,13 @@ const SignUpForm = () => {
     }));
   };
 
-  useEffect(() => {
-    if (status === "loading") {
-      toast.info("Submitting form... Please wait."); // Loading toast
-    }
-
-    if (status === "succeeded" && response) {
-      const { userId, email } = response.data;
-      const customSuccessStyle = {
-        backgroundColor: "#B0EBB4", // Green background
-        color: "#fff", // White text
-        fontSize: "16px", // Font size
-        padding: "10px 20px", // Padding
-        borderRadius: "5px", // Border radius for rounded corners
-      };
-
-      toast.success(
-        <Box>
-          <Typography variant="h6">Created Successfully!</Typography>
-          <Typography variant="body2">UserID: {userId}</Typography>
-          <Typography variant="body2">Email: {email}</Typography>
-        </Box>,
-        {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: true,
-          style: customSuccessStyle, // Apply the custom styles
-        }
-      );
-      dispatch(clearFormData());
-    }
-
-    if (status === "failed" && error.general) {
-      toast.error(`Error: ${error.general}`); // Error toast
-    }
-  }, [status, response, error, dispatch]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Form validation
     const errors = {
       userId: validateUserId(formData.userId),
       userName: validateUserName(formData.userName),
       email: validateEmail(formData.email),
-      personalemail: validatePersonalEmail(formData.personalemail),
       phoneNumber: validatePhoneNumber(formData.phoneNumber),
       gender: validateGender(formData.gender),
       dob: validateDOB(formData.dob),
@@ -299,8 +223,16 @@ const SignUpForm = () => {
       return;
     }
 
-    // Dispatch the form data
     dispatch(submitFormData(formData));
+    dispatch(clearFormData());
+  };
+
+  const handleRoleChange = (selectedRole) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      roles: [selectedRole],
+    }));
+    dispatch(updateFormData({ name: "roles", value: [selectedRole] }));
   };
 
   // Clear the form
@@ -311,7 +243,7 @@ const SignUpForm = () => {
 
   // timer for the registration success message
   useEffect(() => {
-    if (status === "succeeded" || (status === "failed" && response)) {
+    if (status === "succeeded" && response) {
       setShowAlert(true);
 
       setFormData({
@@ -326,18 +258,16 @@ const SignUpForm = () => {
         gender: "",
         joiningDate: "",
         dob: "",
-        roles: ["EMPLOYEE"],
+        roles: [],
       });
 
       const timer = setTimeout(() => {
         setShowAlert(false);
-        dispatch(clearFormData());
-        setIsSignIn(true);
-      }, 3000);
-
+        dispatch(clearFormData())
+      }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [status, response, navigate]);
+  }, [status, response]);
 
   const isFormValid = Object.values(formError).every((error) => error === "");
 
@@ -355,38 +285,22 @@ const SignUpForm = () => {
       gender: "",
       joiningDate: "",
       dob: "",
-      roles: ["EMPLOYEE"],
+      roles: [],
     });
-
+    
     setFormError({});
   };
 
   return (
     <Grid container style={{ height: "100vh" }}>
       {/* Left Half (Animation Component) */}
+      
+
+      
       <Grid
         item
         xs={12}
-        md={6}
-        sx={{
-          position: "relative",
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          textAlign: "center",
-          overflow: "hidden",
-        }}
-      >
-        <SignUpFromLeftSide />
-      </Grid>
-
-      {/* Right Half (Form) */}
-      <Grid
-        item
-        xs={12}
-        md={6}
+        md={12}
         sx={{
           display: "flex",
           alignItems: "center",
@@ -398,7 +312,7 @@ const SignUpForm = () => {
         <Box
           sx={{
             width: "90%",
-            maxWidth: { xs: 320, sm: 400, md: 500 },
+            maxWidth: { xs: 320, sm: 400, md: 1200 },
             p: { xs: 2, sm: 3 },
             boxShadow: 3,
             borderRadius: 2,
@@ -406,54 +320,33 @@ const SignUpForm = () => {
             height: "auto",
           }}
         >
-          {isSignIn ? (
-            <SignIn />
-          ) : (
+          
             <>
-              {showAlert && response && (
-                <Alert
-                  severity={status === "succeeded" ? "success" : "error"}
-                  sx={{ mb: 2 }}
-                >
-                  {status === "succeeded" ? (
-                    <>
-                      Registration Successful! <br />
-                      <strong>User ID:</strong> {response?.data?.userId},{" "}
-                      <strong>Email:</strong> {response?.data?.email}
-                    </>
-                  ) : (
-                    <>
-                      Registration Failed:{" "}
-                      {response?.error?.errormessage ||
-                        "An unknown error occurred."}
-                      <br />
-                      <strong>Error Code:</strong> {response?.error?.errorcode}
-                    </>
-                  )}
+              {showAlert && status === "succeeded" && response && (
+                <Alert severity="success">
+                  Registration Successful! User ID: {response.data?.userId},
+                  Email:{response.data?.email}
                 </Alert>
               )}
-
-              <Typography
-                variant="h4"
-                component="h1"
-                gutterBottom
-                align="left"
-                sx={{
-                  color: theme.palette.text.primary,
-                  fontSize: { xs: "1rem", sm: "1.5rem", md: "2rem" },
-                  backgroundColor: "rgba(232, 245, 233)",
-                  padding: "0.5rem",
-                  borderRadius: 2,
-                }}
-              >
-                Registration
-              </Typography>
+               <Typography
+                      variant="h5"
+                      align="start"
+                      color="primary"
+                      gutterBottom
+                      sx={{
+                        backgroundColor: "rgba(232, 245, 233)",
+                        padding: 1,
+                        borderRadius: 1,
+                      }}
+                    >
+                     Add User
+                    </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
                   {/* User ID Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
-                      label="Employee ID"
+                      label="User ID"
                       name="userId"
                       type="text"
                       value={formData.userId}
@@ -462,15 +355,17 @@ const SignUpForm = () => {
                       fullWidth
                       error={!!formError.userId}
                       helperText={formError.userId}
+                      variant="filled"
                     />
                   </Grid>
 
                   {/* User Name Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={4}>
                     <TextField
-                      label="Employee Name"
+                      label="User Name"
                       name="userName"
                       type="text"
+                       variant="filled"
                       value={formData.userName}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -481,11 +376,12 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Email Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={4}>
                     <TextField
-                      label="Company Email"
+                      label="Email"
                       name="email"
                       type="email"
+                       variant="filled"
                       value={formData.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -496,11 +392,12 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Personal Email Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={4}>
                     <TextField
-                      label="Employee Personal Email"
+                      label="Personal Email"
                       name="personalemail"
                       type="email"
+                       variant="filled"
                       value={formData.personalemail}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -511,11 +408,12 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Phone Number Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={4}>
                     <TextField
                       label="Phone Number"
                       name="phoneNumber"
                       type="number"
+                       variant="filled"
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -526,11 +424,12 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Designation Field */}
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={4}>
                     <TextField
-                      label="Employee Designation"
+                      label="Designation"
                       name="designation"
                       type="text"
+                       variant="filled"
                       value={formData.designation}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -541,7 +440,7 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Gender Field */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}md={4}>
                     <FormControl fullWidth>
                       <InputLabel>Gender</InputLabel>
                       <Select
@@ -550,6 +449,7 @@ const SignUpForm = () => {
                         onBlur={handleBlur}
                         label="Gender"
                         name="gender"
+                         variant="filled"
                         error={!!formError.gender}
                       >
                         <MenuItem value="Male">Male</MenuItem>
@@ -566,11 +466,12 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Date of Birth Field */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     <TextField
                       label="Date of Birth"
                       name="dob"
                       type="date"
+                       variant="filled"
                       value={formData.dob}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -584,42 +485,29 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Joining Date Field */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     <TextField
                       label="Joining Date"
                       name="joiningDate"
                       type="date"
+                       variant="filled"
                       value={formData.joiningDate}
                       onChange={handleJoiningDateChange}
-                      onBlur={handleBlur} // Optional: Validate on blur
+                      onBlur={handleBlur} // Optional: You can also validate on blur
                       error={!!formError.joiningDate} // Show error if any
                       helperText={formError.joiningDate} // Display error message
                       fullWidth
                       InputLabelProps={{
                         shrink: true,
                       }}
-                      InputProps={{
-                        inputProps: {
-                          min: new Date(
-                            new Date().setMonth(new Date().getMonth() - 1)
-                          )
-                            .toISOString()
-                            .split("T")[0], // Minimum date: One month before
-                          max: new Date(
-                            new Date().setMonth(new Date().getMonth() + 1)
-                          )
-                            .toISOString()
-                            .split("T")[0], // Maximum date: One month after
-                        },
-                      }}
                     />
                   </Grid>
-
                   {/* Password Field */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     <TextField
                       label="Password"
                       name="password"
+                       variant="filled"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
@@ -644,13 +532,14 @@ const SignUpForm = () => {
                   </Grid>
 
                   {/* Confirm Password Field */}
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     <TextField
                       label="Confirm Password"
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}
+                       variant="filled"
                       onBlur={handleBlur}
                       fullWidth
                       error={!!formError.confirmPassword}
@@ -672,7 +561,23 @@ const SignUpForm = () => {
                       }}
                     />
                   </Grid>
+
+                  <Grid item xs={12} sm={4} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                      label="Select Role"
+                       variant="filled"
+                      value={formData.roles[0] || ""}
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                    >
+                      <MenuItem value="ADMIN">Admin</MenuItem>
+                      <MenuItem value="EMPLOYEE">Employee</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
+                </Grid>
+
 
                 {/* Submit and Clear Buttons */}
                 <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
@@ -682,58 +587,25 @@ const SignUpForm = () => {
                     color="primary"
                     disabled={!isFormValid}
                   >
-                    Register
+                    ADD USER
                   </Button>
                   <Button
                     type="button"
                     variant="outlined"
                     onClick={handleClear}
                   >
-                    Clear
+                    Clear FORM
                   </Button>
                 </Box>
               </form>
             </>
-          )}
+         
         </Box>
 
-        {/* Toggle Login/Register */}
-        <Box sx={{ position: "absolute", top: "8px", right: "8px" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setIsSignIn(!isSignIn)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              fontSize: { xs: "0.8rem", md: "1rem" },
-              fontWeight: "200",
-              padding: { xs: "4px 8px", md: "6px 12px" },
-            }}
-          >
-            {isSignIn ? (
-              <>
-                <PersonAddIcon
-                  fontSize="small"
-                  sx={{ marginRight: "2px", padding: "2px" }}
-                />{" "}
-                Register
-              </>
-            ) : (
-              <>
-                <LoginIcon
-                  fontSize="small"
-                  sx={{ marginRight: "2px", padding: "2px" }}
-                />{" "}
-                LogIn
-              </>
-            )}
-          </Button>
-        </Box>
+
       </Grid>
-      <ToastContainer />
     </Grid>
   );
 };
 
-export default SignUpForm;
+export default AddUser;
