@@ -3,7 +3,6 @@ import {
   TextField,
   Button,
   Grid,
-  Typography,
   Box,
   Paper,
   Input,
@@ -15,13 +14,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  // FormHelperText,
+  InputAdornment,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import {
   updateFormData,
   submitFormData,
   resetForm,
+  clearMessages,
 } from "../redux/features/candidateSubmissionSlice";
 
 const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
@@ -59,7 +59,7 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
   const [alert, setAlert] = useState({
     open: false,
     message: "",
-    severity: "",
+    severity: "info",
   });
 
   const handleFileChange = (e) => {
@@ -92,16 +92,25 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormError((prev) => ({ ...prev, [name]: validateField(name, value) }));
-    // if (name === "skills") {
-    //   dispatch(
-    //     updateFormData({
-    //       [name]: value.split(",").map((skill) => skill.trim()),
-    //     })
-    //   );
-    // } else {
-    dispatch(updateFormData({ [name]: value }));
-    //}
+    let updatedValue = value;
+
+    // Handle CTC fields
+    if (name === "currentCTC" || name === "expectedCTC") {
+      // Remove any existing "LPA" and trim
+      updatedValue = value.replace(/\s*LPA\s*/g, "").trim();
+
+      // Validate if it's a valid number
+      if (updatedValue && !isNaN(updatedValue)) {
+        updatedValue = `${updatedValue}`;
+      }
+    }
+
+    setFormError((prev) => ({
+      ...prev,
+      [name]: validateField(name, updatedValue),
+    }));
+
+    dispatch(updateFormData({ [name]: updatedValue }));
   };
 
   const validateField = (name, value) => {
@@ -113,13 +122,16 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
         break;
       case "currentCTC":
       case "expectedCTC":
-        if (value && value < 0) error = "CTC cannot be negative.";
+        const numValue = parseFloat(value.replace(/\s*LPA\s*/g, ""));
+        if (value && (isNaN(numValue) || numValue < 0))
+          error = "Please enter a valid CTC value.";
         break;
       case "totalExperience":
       case "relevantExperience":
         if (value && (value < 0 || value > 50))
           error = "Experience must be between 0 and 50 years.";
         break;
+      case "communicationSkills":
       case "requiredTechnologiesRating":
         if (value && (value < 1 || value > 5))
           error = "Rating must be between 1 and 5.";
@@ -130,8 +142,12 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
     return error;
   };
 
-  const handleSubmit = (e) => {
+ 
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    // Check for validation errors
     if (Object.values(formError).some((error) => error !== "")) {
       setAlert({
         open: true,
@@ -140,24 +156,64 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
       });
       return;
     }
-    dispatch(submitFormData({ formData, userId, jobId, userEmail }));
+  
+    // Prepare form data with properly formatted CTC values
+    const submissionData = {
+      ...formData,
+      currentCTC: formData.currentCTC
+        ? `${formData.currentCTC.replace(/\s*LPA\s*/g, "")} LPA`
+        : "",
+      expectedCTC: formData.expectedCTC
+        ? `${formData.expectedCTC.replace(/\s*LPA\s*/g, "")} LPA`
+        : "",
+    };
+  
+    // Submit the form data, passing userId, jobId, and userEmail directly
+    try {
+      await dispatch(
+        submitFormData({
+          formData: submissionData,  // Ensure no extra userId, jobId, or userEmail in formData
+          userId,
+          jobId,
+          userEmail,
+        })
+      ).unwrap();
+    } catch (error) {
+      setAlert({
+        open: true,
+        message: error.message || "Failed to submit form",
+        severity: "error",
+      });
+    }
   };
+  
+  
 
   useEffect(() => {
-    dispatch(updateFormData({ userId, jobId, userEmail }));
-  }, [userId, jobId, userEmail, dispatch]);
+    // Only dispatch if these values aren't already in form data
+    if (!formData.userId || !formData.jobId || !formData.userEmail) {
+      dispatch(updateFormData({ userId, jobId, userEmail }));
+    }
+  }, [userId, jobId, userEmail, dispatch, formData]);
 
   useEffect(() => {
     if (successMessage) {
       setAlert({
         open: true,
-        message: `${successMessage} Candidate ID: ${candidateId}, Employee ID: ${employeeId}, Job ID: ${submittedJobId}`,
+        message: `${successMessage} ${
+          candidateId ? `Candidate ID: ${candidateId}` : ""
+        } ${employeeId ? `Employee ID: ${employeeId}` : ""} ${
+          submittedJobId ? `Job ID: ${submittedJobId}` : ""
+        }`,
         severity: "success",
       });
 
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
+        dispatch(clearMessages());
         dispatch(resetForm());
       }, 5000);
+
+      return () => clearTimeout(timeoutId);
     }
 
     if (errorMessage) {
@@ -166,6 +222,12 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
         message: errorMessage,
         severity: "error",
       });
+
+      const timeoutId = setTimeout(() => {
+        dispatch(clearMessages());
+      }, 5000);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [
     successMessage,
@@ -191,149 +253,41 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
     />
   );
 
-  const RenderedSelectDropdown = ({
+  const renderSelectDropdown = ({
     name,
     label,
     value,
     onChange,
     options,
     error,
-  }) => {
-    return (
-      <FormControl fullWidth margin="normal" error={!!error}>
-        <InputLabel id={`${name}-label`}>{label}</InputLabel>
-        <Select
-          labelId={`${name}-label`}
-          id={name}
-          value={value || ""}
-          onChange={onChange}
-          label={label}
-        >
-          {options.map((item) => (
-            <MenuItem key={item.value} value={item.value}>
-              {item.label}
-            </MenuItem>
-          ))}
-        </Select>
-        {error && <FormHelperText>{error}</FormHelperText>}
-      </FormControl>
-    );
-  };
+  }) => (
+    <FormControl fullWidth margin="normal" error={!!error}>
+      <InputLabel id={`${name}-label`}>{label}</InputLabel>
+      <Select
+        labelId={`${name}-label`}
+        id={name}
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        label={label}
+      >
+        {options.map((item) => (
+          <MenuItem key={item.value} value={item.value}>
+            {item.label}
+          </MenuItem>
+        ))}
+      </Select>
+      {error && <FormHelperText>{error}</FormHelperText>}
+    </FormControl>
+  );
 
   return (
-    <Paper sx={{ padding: 4, maxWidth: 1200, margin: "auto", marginTop: 4 }}>
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("fullName", "Full Name", { required: true })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("candidateEmailId", "Candidate Email ID", {
-              required: true,
-            })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("contactNumber", "Contact Number", {
-              required: true,
-            })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("currentOrganization", "Current Organization")}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("qualification", "Qualification")}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("totalExperience", "Total Experience (in years)", {
-              type: "number",
-            })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField(
-              "relevantExperience",
-              "Relevant Experience (in years)",
-              { type: "number" }
-            )}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("currentCTC", "Current CTC", { type: "number" })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("expectedCTC", "Expected CTC", { type: "number" })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            <RenderedSelectDropdown
-              name="noticePeriod"
-              label="Notice Period (in days)"
-              value={formData.noticePeriod} // Assuming formData holds your form state
-              onChange={handleChange} // Your function to handle state change
-              options={[
-                { value: "Immediate", label: "Immediate" },
-                { value: "15 days", label: "15 days" },
-                { value: "30 days", label: "30 days" },
-                { value: "45 days", label: "45 days" },
-                { value: "60 days", label: "60 days" },
-              ]}
-              error={formError.noticePeriod} // Assuming formError holds your error messages
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("currentLocation", "Current Location")}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("preferredLocation", "Preferred Location")}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("skills", "Skills (comma-separated)")}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField(
-              "communicationSkills",
-              "Communication Skills (rating out of 5)",
-              { type: "number" }
-            )}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField(
-              "requiredTechnologiesRating",
-              "Required Technologies Rating (1 to 5)",
-              { type: "number" }
-            )}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            {renderTextField("overallFeedback", "Overall Feedback", {
-              multiline: true,
-              rows: 2,
-            })}
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={4}>
-            <Input
-              type="file"
-              onChange={handleFileChange}
-              inputProps={{ accept: ".pdf, .docx" }}
-            />
-            {formError.resumeFile && (
-              <FormHelperText error>{formError.resumeFile}</FormHelperText>
-            )}
-          </Grid>
-        </Grid>
-
-        <Box mt={3} display="flex" justifyContent="flex-end">
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : "Submit"}
-          </Button>
-        </Box>
-      </form>
-
+    <Paper sx={{ padding: 2, maxWidth: 1200, position: "relative" }}>
       <Snackbar
         open={alert.open}
         autoHideDuration={6000}
         onClose={() => setAlert({ ...alert, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           onClose={() => setAlert({ ...alert, open: false })}
@@ -343,6 +297,170 @@ const CandidateSubmissionForm = ({ jobId, userId, userEmail }) => {
           {alert.message}
         </Alert>
       </Snackbar>
+
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          {/* Basic Information */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("fullName", "Full Name", { required: true })}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("candidateEmailId", "Candidate Email ID", {
+              required: true,
+              type: "email",
+            })}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("contactNumber", "Contact Number", {
+              required: true,
+            })}
+          </Grid>
+
+          {/* Professional Information */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("currentOrganization", "Current Organization")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("qualification", "Qualification")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("totalExperience", "Total Experience (in years)", {
+              type: "number",
+              InputProps: {
+                inputProps: {
+                  min: 0,
+                  max: 50,
+                  step: 0.1, // Allows decimal steps
+                },
+              },
+            })}
+          </Grid>
+
+          {/* Experience and CTC */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField(
+              "relevantExperience",
+              "Relevant Experience (in years)",
+              {
+                type: "number",
+                InputProps: {
+                  inputProps: {
+                    min: 0,
+                    max: 50,
+                    step: 0.1, // Allows decimal steps
+                  },
+                },
+              }
+            )}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("currentCTC", "Current CTC", {
+              type: "text",
+              InputProps: {
+                endAdornment: (
+                  <InputAdornment position="end">LPA</InputAdornment>
+                ),
+              },
+            })}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("expectedCTC", "Expected CTC", {
+              type: "text",
+              InputProps: {
+                endAdornment: (
+                  <InputAdornment position="end">LPA</InputAdornment>
+                ),
+              },
+            })}
+          </Grid>
+
+          {/* Location and Notice Period */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderSelectDropdown({
+              name: "noticePeriod",
+              label: "Notice Period",
+              value: formData.noticePeriod,
+              onChange: handleChange,
+              options: [
+                { value: "Immediate", label: "Immediate" },
+                { value: "15 days", label: "15 days" },
+                { value: "30 days", label: "30 days" },
+                { value: "45 days", label: "45 days" },
+                { value: "60 days", label: "60 days" },
+              ],
+              error: formError.noticePeriod,
+            })}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("currentLocation", "Current Location")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("preferredLocation", "Preferred Location")}
+          </Grid>
+
+          {/* Skills and Ratings */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("skills", "Skills (comma-separated)")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField(
+              "communicationSkills",
+              "Communication Skills Rating",
+              {
+                type: "number",
+                InputProps: { inputProps: { min: 1, max: 5 } },
+              }
+            )}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField(
+              "requiredTechnologiesRating",
+              "Required Technologies Rating",
+              {
+                type: "number",
+                InputProps: { inputProps: { min: 1, max: 5 } },
+              }
+            )}
+          </Grid>
+
+          {/* Feedback and Resume */}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderTextField("overallFeedback", "Overall Feedback", {
+              multiline: true,
+              rows: 2,
+            })}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <FormControl fullWidth error={!!formError.resumeFile}>
+              <InputLabel shrink htmlFor="resume-file">
+                Resume
+              </InputLabel>
+              <Input
+                id="resume-file"
+                type="file"
+                onChange={handleFileChange}
+                inputProps={{ accept: ".pdf,.docx" }}
+              />
+              {formError.resumeFile && (
+                <FormHelperText error>{formError.resumeFile}</FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
+        </Grid>
+
+        {/* Submit Button */}
+        <Box mt={3} display="flex" justifyContent="flex-end">
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            sx={{ minWidth: 120 }}
+          >
+            {loading ? <CircularProgress size={24} /> : "Submit"}
+          </Button>
+        </Box>
+      </form>
     </Paper>
   );
 };

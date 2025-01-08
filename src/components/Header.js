@@ -152,7 +152,16 @@ const Header = ({ userId, logInTimeStamp, orglogo }) => {
                   color: "#000000",
                 }}
               >
-                Logged in at: {logInTimeStamp || "13:30 PM - 10-12-2024"}
+                Logged in at:{" "}
+                {logInTimeStamp
+                  ? new Date(logInTimeStamp).toLocaleString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    }) +
+                    " - " +
+                    new Date(logInTimeStamp).toLocaleDateString("en-GB")
+                  : "13:30 PM - 10-12-2024"}
               </Typography>
             </Box>
             <Box

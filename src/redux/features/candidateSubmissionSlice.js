@@ -76,6 +76,7 @@ export const submitFormData = createAsyncThunk(
       }
 
       
+
       // Make API call
       const response = await axios.post(
         `${BASE_URL}/candidate/submit`,
@@ -127,12 +128,17 @@ const candidateSubmissionSlice = createSlice({
     },
     
     resetForm: (state) => {
-      state.formData = initialState.formData;
+      state.formData = { ...initialState.formData };
       state.successMessage = "";
       state.errorMessage = "";
       state.candidateId = "";
       state.employeeId = "";
       state.jobId = "";
+    },
+
+    clearMessages: (state) => {
+      state.successMessage = "";
+      state.errorMessage = "";
     },
   },
   extraReducers: (builder) => {
@@ -148,7 +154,7 @@ const candidateSubmissionSlice = createSlice({
         state.candidateId = action.payload.candidateId;
         state.employeeId = action.payload.employeeId;
         state.jobId = action.payload.jobId;
-        state.formData = initialState.formData; // Reset form after success
+        state.formData = initialState.formData;
       })
       .addCase(submitFormData.rejected, (state, action) => {
         state.loading = false;
@@ -160,5 +166,5 @@ const candidateSubmissionSlice = createSlice({
   },
 });
 
-export const { updateFormData, resetForm } = candidateSubmissionSlice.actions;
+export const { updateFormData, resetForm, clearMessages } = candidateSubmissionSlice.actions;
 export default candidateSubmissionSlice.reducer;

@@ -14,11 +14,11 @@ export const submitInterviewForm = createAsyncThunk(
         formData,
         {
           headers: {
-            'Content-Type': 'application/json', // Specify the content type 
+            'Content-Type': 'application/json',  
           },
         }
       );
-      return response.data; // Return the response data on success
+      return response.data; 
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Submission Failed");
     }
@@ -79,6 +79,7 @@ const interviewFormSlice = createSlice({
         state.error = null;
         if (action.payload?.success) {
           state.interviewResponse = action.payload.payload;
+          console.log('success response payload ',action)
         } else {
           state.error = action.payload?.message || "Interview scheduling failed.";
           state.submissionSuccess = false;

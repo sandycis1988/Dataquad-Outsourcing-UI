@@ -124,11 +124,27 @@ const SignUpForm = () => {
 
   const validateJoiningDate = (joiningDate, dob) => {
     if (!joiningDate) return "Joining date is required";
+
     const birthDate = new Date(dob);
     const joinDate = new Date(joiningDate);
+    const currentDate = new Date();
+
+    // Ensure joining date is after the date of birth
     if (joinDate <= birthDate) {
       return "Joining date must be after date of birth";
     }
+
+    // Calculate the one-month range
+    const oneMonthBefore = new Date();
+    oneMonthBefore.setMonth(currentDate.getMonth() - 1);
+
+    const oneMonthAfter = new Date();
+    oneMonthAfter.setMonth(currentDate.getMonth() + 1);
+
+    if (joinDate < oneMonthBefore || joinDate > oneMonthAfter) {
+      return "Joining date must be within one month before or after today's date";
+    }
+
     return "";
   };
 
@@ -421,13 +437,16 @@ const SignUpForm = () => {
                 variant="h4"
                 component="h1"
                 gutterBottom
-                align="center"
+                align="left"
                 sx={{
                   color: theme.palette.text.primary,
                   fontSize: { xs: "1rem", sm: "1.5rem", md: "2rem" },
+                  backgroundColor: "rgba(232, 245, 233)",
+                  padding: "0.5rem",
+                  borderRadius: 2,
                 }}
               >
-                Sign up
+                Registration
               </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
@@ -572,15 +591,30 @@ const SignUpForm = () => {
                       type="date"
                       value={formData.joiningDate}
                       onChange={handleJoiningDateChange}
-                      onBlur={handleBlur} // Optional: You can also validate on blur
+                      onBlur={handleBlur} // Optional: Validate on blur
                       error={!!formError.joiningDate} // Show error if any
                       helperText={formError.joiningDate} // Display error message
                       fullWidth
                       InputLabelProps={{
                         shrink: true,
                       }}
+                      InputProps={{
+                        inputProps: {
+                          min: new Date(
+                            new Date().setMonth(new Date().getMonth() - 1)
+                          )
+                            .toISOString()
+                            .split("T")[0], // Minimum date: One month before
+                          max: new Date(
+                            new Date().setMonth(new Date().getMonth() + 1)
+                          )
+                            .toISOString()
+                            .split("T")[0], // Maximum date: One month after
+                        },
+                      }}
                     />
                   </Grid>
+
                   {/* Password Field */}
                   <Grid item xs={12} md={6}>
                     <TextField

@@ -5,7 +5,6 @@ import {
   resetForm,
   submitInterviewForm,
   clearError,
-  interviewResponse,
 } from "../redux/features/interviewSheduleSlice";
 import {
   Button,
@@ -21,12 +20,8 @@ import {
   FormControl,
   FormLabel,
 } from "@mui/material";
-import MuiDateTimePicker from "../components/MuiComponents/MuiDatePicker"; // Import the new DateTimeField component
+// import MuiDateTimePicker from "../components/MuiComponents/MuiDatePicker"; // Import the new DateTimeField component
 import dayjs from "dayjs";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import { toast } from "react-toastify";
-
-dayjs.extend(isSameOrBefore);
 
 const InterviewForm = ({
   jobId,
@@ -41,13 +36,11 @@ const InterviewForm = ({
 }) => {
   const dispatch = useDispatch();
 
-  const {
-    formData,
-    isSubmitting,
-    submissionSuccess,
-    error,
-    interviewResponse,
-  } = useSelector((state) => state.interviewForm);
+  const { formData, isSubmitting, submissionSuccess, error ,interviewResponse} = useSelector(
+    (state) => state.interviewForm
+  );
+
+  console.log('interview response ',interviewResponse)
 
   const [dateError, setDateError] = useState("");
   const [formError, setFormError] = useState("");
@@ -67,9 +60,7 @@ const InterviewForm = ({
     dispatch(
       updateFormField({ name: "candidateEmailId", value: candidateEmailId })
     );
-    dispatch(
-      updateFormField({ name: "userEmail", value: userEmail })
-    );
+    dispatch(updateFormField({ name: "userEmail", value: userEmail }));
   }, [
     jobId,
     candidateId,
@@ -90,6 +81,11 @@ const InterviewForm = ({
   const handleDateTimeChange = (fieldName, newValue) => {
     const now = dayjs(); // Current date and time
 
+    if (newValue && !dayjs(newValue).isValid()) {
+      setDateError("Invalid date/time selected.");
+      return;
+    }
+
     if (fieldName === "interviewDateTime") {
       if (newValue && dayjs(newValue).isBefore(now, "day")) {
         setDateError("Interview Date can't be in the past.");
@@ -98,24 +94,26 @@ const InterviewForm = ({
         setDateError(""); // Clear any previous error
       }
 
-      // Automatically set interviewScheduledTimestamp to current time when interviewDateTime is set
-      if (newValue) {
-        dispatch(
-          updateFormField({
-            name: "interviewScheduledTimestamp",
-            value: now.toISOString(),
-          })
-        );
-      }
-    }
+      // Save the exact date as interviewDateTime
+      dispatch(updateFormField({ name: "interviewDateTime", value: newValue }));
 
-    // Update the target field
-    dispatch(
-      updateFormField({
-        name: fieldName,
-        value: newValue ? newValue.toISOString() : null,
-      })
-    );
+      // Save the timestamp (Unix) as interviewScheduledTimestamp
+      const timestamp = newValue ? dayjs(newValue).valueOf() : null; // Convert to Unix timestamp
+      dispatch(
+        updateFormField({
+          name: "interviewScheduledTimestamp",
+          value: timestamp,
+        })
+      );
+    } else {
+      // Update other fields if needed
+      dispatch(
+        updateFormField({
+          name: fieldName,
+          value: newValue,
+        })
+      );
+    }
   };
 
   const validateForm = () => {
@@ -123,7 +121,8 @@ const InterviewForm = ({
     if (
       !formData.interviewDateTime ||
       !formData.duration ||
-      !formData.zoomLink
+      !formData.zoomLink ||
+      !formData.interviewLevel
     ) {
       setFormError("All required fields must be filled.");
       return false;
@@ -143,37 +142,17 @@ const InterviewForm = ({
       return; // Stop submission if validation fails
     }
 
-    // Add the timestamp field at submission
-    const currentTimestamp = new Date().toISOString();
-    dispatch(
-      updateFormField({
-        name: "interviewScheduledTimestamp",
-        value: currentTimestamp,
-      })
-    );
+    // Send the form data with interviewDateTime exactly as it is selected
+    const formDataToSubmit = {
+      ...formData,
+    };
 
-    dispatch(submitInterviewForm(formData));
+    dispatch(submitInterviewForm(formDataToSubmit));
   };
 
   useEffect(() => {
-    if (submissionSuccess && interviewResponse.success) {
-      // Show the toast notification with success message
-      toast.success(interviewResponse.message);
-  
-      // Optionally, show the interview details as a success message
-      if (interviewResponse.payload) {
-        toast.info(
-          `Interview scheduled for Candidate ID: ${interviewResponse.payload.candidateId}`
-        );
-      }
-      
-      // Reset form after success
-      dispatch(resetForm());
-    }
-  }, [submissionSuccess, interviewResponse, dispatch]);
-
-  useEffect(() => {
     if (submissionSuccess) {
+      // Show success alert
       dispatch(resetForm());
     }
   }, [submissionSuccess, dispatch]);
@@ -196,26 +175,7 @@ const InterviewForm = ({
       }}
     >
       {submissionSuccess && (
-        <>
-          <Alert severity="success">Form submitted successfully!</Alert>
-          {interviewResponse && (
-            <Box mt={2}>
-              <Typography variant="h6">Interview Scheduled:</Typography>
-              <Typography>
-                <strong>Candidate ID:</strong> {interviewResponse.candidateId}
-              </Typography>
-              <Typography>
-                <strong>User Email:</strong> {interviewResponse.userEmail}
-              </Typography>
-              <Typography>
-                <strong>Email ID:</strong> {interviewResponse.emailId}
-              </Typography>
-              <Typography>
-                <strong>Client Email:</strong> {interviewResponse.clientEmail}
-              </Typography>
-            </Box>
-          )}
-        </>
+        <Alert severity="success">Form submitted successfully!</Alert>
       )}
       {error && <Alert severity="error">{error}</Alert>}
       {formError && <Alert severity="error">{formError}</Alert>}
@@ -302,33 +262,43 @@ const InterviewForm = ({
             value={formData.clientEmail || ""}
             onChange={handleChange}
             fullWidth
-            // disabled
             variant="filled"
           />
         </Grid>
+        {/* Interview Date & Time */}
         <Grid item xs={12} sm={6} md={4} lg={4}>
-          <TextField
-            label="Employee ID"
-            name="userId"
-            type="text"
-            value={formData.userId || ""}
-            onChange={handleChange}
-            fullWidth
-            disabled
+          {/* <MuiDateTimePicker
+            label="Interview Date & Time"
             variant="filled"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={4}>
+            value={formData.interviewDateTime || null}
+            onChange={(newValue) =>
+              handleDateTimeChange("interviewDateTime", newValue)
+            }
+            required
+            TextFieldProps={{
+              size: "small", // Makes the input smaller
+            }}
+          /> */}
+
           <TextField
-            label="Employee Email"
-            name="userEmail"
-            type="email"
-            value={formData.userEmail || ""}
-            onChange={handleChange}
+            label="Interview Date & Time"
+            name="interviewDateTime"
+            type="datetime-local"
             fullWidth
             variant="filled"
-            disabled
+            value={formData.interviewDateTime || ""}
+            onChange={(e) =>
+              handleDateTimeChange("interviewDateTime", e.target.value)
+            }
+            required
+            InputLabelProps={{
+              shrink: true, // Keeps the label above the input field
+            }}
+            InputProps={{
+              size: "large", // Makes the input smaller
+            }}
           />
+          {dateError && <Typography color="error">{dateError}</Typography>}
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={4}>
           <TextField
@@ -345,7 +315,7 @@ const InterviewForm = ({
           <TextField
             label="Zoom Link"
             name="zoomLink"
-            type="url"
+            type="text"
             value={formData.zoomLink || ""}
             onChange={handleChange}
             fullWidth
@@ -353,49 +323,12 @@ const InterviewForm = ({
           />
         </Grid>
 
-        {/* Interview Date & Time */}
-        <Grid item xs={12} sm={6} md={4} lg={4}>
-          <MuiDateTimePicker
-            label="Interview Date & Time"
-            variant="filled"
-            value={
-              formData.interviewDateTime
-                ? dayjs(formData.interviewDateTime)
-                : null
-            }
-            onChange={(newValue) =>
-              handleDateTimeChange("interviewDateTime", newValue)
-            }
-            required
-            TextFieldProps={{
-              size: "small", // Makes the input smaller
-            }}
-          />
-          {dateError && <Typography color="error">{dateError}</Typography>}
-        </Grid>
-
-        {/* Scheduled Timestamp */}
-        <Grid item xs={12} sm={6} md={4} lg={4}>
-          <MuiDateTimePicker
-            label="Scheduled Timestamp"
-            variant="filled"
-            value={
-              formData.interviewScheduledTimestamp
-                ? dayjs(formData.interviewScheduledTimestamp)
-                : null
-            }
-            onChange={(newValue) =>
-              handleDateTimeChange("interviewScheduledTimestamp", newValue)
-            }
-            disabled={!formData.interviewDateTime} // Disable until interviewDateTime is set
-            required
-          />
-        </Grid>
-        <Grid item>
+        {/* Interview Level Radio Buttons */}
+        <Grid item xs={12}>
           <FormControl component="fieldset">
             <FormLabel component="legend">Interview Level</FormLabel>
             <RadioGroup
-              row // This ensures the Radio buttons are on the same row
+              row
               name="interviewLevel"
               value={formData.interviewLevel || ""}
               onChange={handleChange}
@@ -413,6 +346,20 @@ const InterviewForm = ({
             </RadioGroup>
           </FormControl>
         </Grid>
+
+        {/* Conditional TextField for External Interview */}
+        {formData.interviewLevel === "External" && (
+          <Grid item xs={12}>
+            <TextField
+              label="External Interview Details"
+              name="externalInterviewDetails"
+              value={formData.externalInterviewDetails || ""}
+              onChange={handleChange}
+              fullWidth
+              variant="filled"
+            />
+          </Grid>
+        )}
       </Grid>
 
       <Box
