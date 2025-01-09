@@ -38,7 +38,7 @@ const initialState = {
     qualification: "",
     recruiterIds: "",
     status: "Open",
-    remark: "",
+    
   },
   status: "idle", // idle, loading, succeeded, failed
   error: null,

@@ -243,18 +243,12 @@ const SignUpForm = () => {
 
   useEffect(() => {
     if (status === "loading") {
-      toast.info("Submitting form... Please wait."); // Loading toast
+      toast.info("Registring... Please wait."); // Loading toast
     }
 
     if (status === "succeeded" && response) {
       const { userId, email } = response.data;
-      const customSuccessStyle = {
-        backgroundColor: "#B0EBB4", // Green background
-        color: "#fff", // White text
-        fontSize: "16px", // Font size
-        padding: "10px 20px", // Padding
-        borderRadius: "5px", // Border radius for rounded corners
-      };
+      
 
       toast.success(
         <Box>
@@ -266,7 +260,7 @@ const SignUpForm = () => {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: true,
-          style: customSuccessStyle, // Apply the custom styles
+          
         }
       );
       dispatch(clearFormData());
@@ -453,6 +447,7 @@ const SignUpForm = () => {
                   {/* User ID Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
+                      placeholder="DQIND001"
                       label="Employee ID"
                       name="userId"
                       type="text"
@@ -468,6 +463,7 @@ const SignUpForm = () => {
                   {/* User Name Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
+                      placeholder="Enter You Name "
                       label="Employee Name"
                       name="userName"
                       type="text"
@@ -483,9 +479,10 @@ const SignUpForm = () => {
                   {/* Email Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Company Email"
+                      label="Official Email Id"
                       name="email"
                       type="email"
+                       placeholder="@dataqinc.com"
                       value={formData.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -500,6 +497,7 @@ const SignUpForm = () => {
                     <TextField
                       label="Employee Personal Email"
                       name="personalemail"
+                      placeholder="@gmail.com"
                       type="email"
                       value={formData.personalemail}
                       onChange={handleChange}
@@ -528,6 +526,7 @@ const SignUpForm = () => {
                   {/* Designation Field */}
                   <Grid item xs={12} sm={6}>
                     <TextField
+                       placeholder="e.g.  Marketing Manager"
                       label="Employee Designation"
                       name="designation"
                       type="text"
@@ -548,6 +547,7 @@ const SignUpForm = () => {
                         value={formData.gender}
                         onChange={handleChange}
                         onBlur={handleBlur}
+                        placeholder=''
                         label="Gender"
                         name="gender"
                         error={!!formError.gender}
@@ -620,6 +620,7 @@ const SignUpForm = () => {
                     <TextField
                       label="Password"
                       name="password"
+                      placeholder="Example@123"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
@@ -648,6 +649,7 @@ const SignUpForm = () => {
                     <TextField
                       label="Confirm Password"
                       name="confirmPassword"
+                     
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}

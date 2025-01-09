@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginAsync } from "../../redux/features/authSlice";
+import OpenInNewTwoToneIcon from '@mui/icons-material/OpenInNewTwoTone';
 import {
   Container,
   Box,
@@ -56,7 +57,8 @@ const SignIn = () => {
 
   // Function to go back to the SignIn form from ForgotPassword
   const goBackToSignIn = () => {
-    setShowForgotPassword(false); // Toggle the state to show SignIn form again
+    setShowForgotPassword(false);
+    navigate('/');
   };
 
   return (
@@ -92,7 +94,7 @@ const SignIn = () => {
             width:'100%',
           }}
         >
-          {showForgotPassword ? "" : "Sign In"}
+          {showForgotPassword ? "Forgot-Password" : "Sign In"}
         </Typography>
 
         {/* Show error message */}
@@ -152,7 +154,7 @@ const SignIn = () => {
                 {status === "loading" ? (
                   <CircularProgress size={24} />
                 ) : (
-                  "Sign In"
+                  `Sign In` 
                 )}
               </Button>
             </Box>

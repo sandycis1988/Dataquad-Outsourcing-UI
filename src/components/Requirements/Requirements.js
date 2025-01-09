@@ -19,6 +19,7 @@ import {
 import axios from "axios";
 import { useSelector } from "react-redux";
 import BASE_URL from "../../redux/apiConfig";
+import CustomDialog from "../MuiComponents/CustomDialog";
 
 
 
@@ -203,7 +204,7 @@ const Requirements = () => {
       />
 
       {/* Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      {/* <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{currentJobTitle}</DialogTitle>
         <DialogContent>
           <Typography>{fullDescription}</Typography>
@@ -213,7 +214,14 @@ const Requirements = () => {
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
+
+      <CustomDialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        title={currentJobTitle} 
+        content={fullDescription} 
+      />
     </Box>
   );
 };

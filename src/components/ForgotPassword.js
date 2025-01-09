@@ -34,7 +34,7 @@ const ForgotPassword = ({ goBack }) => {
   const getTitle = () => {
     switch (step) {
       case 1:
-        return "Forgot Password"; // Step 1 title
+        return ""; // Step 1 title
       case 2:
         return "Verify OTP"; // Step 2 title
       case 3:
@@ -47,7 +47,7 @@ const ForgotPassword = ({ goBack }) => {
   // Submit Email (Step 1)
   const handleEmailSubmit = () => {
     if (!email) {
-      setValidationError("Please enter your email");
+      setValidationError("Please enter your official email ");
       return;
     }
     setValidationError("");

@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import InterviewForm from "../InterviewForm";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CustomDialog from "../MuiComponents/CustomDialog";
 
 const Submissions = () => {
   const [data, setData] = useState([]);
@@ -119,19 +121,20 @@ const Submissions = () => {
             color: "blue",
             textDecoration: "underline",
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px", // Adjust spacing between text and icon
           }}
         >
           Download Resume
+          <OpenInNewIcon fontSize="small" />
         </a>
       );
     }
-
     if (header === "Interview") {
       const isScheduled = row.interviewStatus === "Scheduled"; // Check if the interview is already scheduled
       return isScheduled ? (
-        <span style={{ color: "gray", cursor: "not-allowed" }}>
-          Scheduled
-        </span>
+        <span style={{ color: "gray", cursor: "not-allowed" }}>Scheduled</span>
       ) : (
         <Link
           to="#"
@@ -162,7 +165,10 @@ const Submissions = () => {
   }
 
   // Calculate paginated data
-  const paginatedData = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedData = data.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <>
@@ -178,7 +184,7 @@ const Submissions = () => {
       />
 
       {/* Dialog for the candidate interview */}
-      <Dialog
+      {/* <Dialog
         open={openInterviewDialog}
         onClose={handleCloseInterviewDialog}
         maxWidth="md"
@@ -224,7 +230,26 @@ const Submissions = () => {
             handleCloseInterviewDialog={handleCloseInterviewDialog}
           />
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
+      <CustomDialog
+        open={openInterviewDialog}
+        onClose={handleCloseInterviewDialog}
+        title="Schedule Interview"
+        content={
+          <InterviewForm
+            jobId={selectedCandidate?.jobId}
+            candidateId={selectedCandidate?.candidateId}
+            candidateFullName={selectedCandidate?.fullName}
+            candidateContactNo={selectedCandidate?.contactNumber}
+            clientName={selectedCandidate?.currentOrganization}
+            userId={selectedCandidate?.userId}
+            candidateEmailId={selectedCandidate?.candidateEmailId}
+            userEmail={selectedCandidate?.userEmail}
+            handleCloseInterviewDialog={handleCloseInterviewDialog}
+          />
+        }
+        maxWidth="md"
+      />
     </>
   );
 };
