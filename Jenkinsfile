@@ -3,6 +3,7 @@ pipeline {
     registryCredential = 'docker-hub'
     DOCKER_IMAGE_NAME = 'react-app'
     registry = "sandycis476/dataquad"
+    dockerImage = ''
   }
   agent any
   stages {
@@ -15,7 +16,7 @@ pipeline {
     stage('Building image') {
       steps{
         script {
-          docker.build("${DOCKER_IMAGE_NAME}:latest")
+          dockerImage = docker.build registry + ":latest"
         }
       }
     }
@@ -23,7 +24,7 @@ pipeline {
       steps{
         script {
           docker.withRegistry( '', registryCredential ) {
-            dockerimage.push()
+            dockerImage.push()
           }
         }
       }
