@@ -2,7 +2,7 @@ pipeline {
   environment {
     imagename = "mulya123/dataquad"
     registryCredential = 'f3b9ffb0-6c23-44fe-97e3-0538eb3206e2'
-    dockerImage = ''
+    DOCKER_IMAGE_NAME = 'react-app'
   }
   agent any
   stages {
@@ -15,7 +15,7 @@ pipeline {
     stage('Building image') {
       steps{
         script {
-          dockerImage = docker.build outsourcingui
+          docker.build("${DOCKER_IMAGE_NAME}:latest")
         }
       }
     }
