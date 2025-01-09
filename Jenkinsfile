@@ -1,7 +1,7 @@
 pipeline {
   environment {
     imagename = "mulya123/dataquad"
-    registryCredential = 'f3b9ffb0-6c23-44fe-97e3-0538eb3206e2'
+    registryCredential = 'docker-hub'
     DOCKER_IMAGE_NAME = 'react-app'
   }
   agent any
