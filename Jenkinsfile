@@ -22,7 +22,7 @@ pipeline {
     stage('Deploy Image') {
       steps{
         script {
-          docker.withRegistry( 'https://hub.docker.com/r/mulya123/dataquad', registryCredential ) {
+          docker.withRegistry( 'https://hub.docker.com/repository/docker/mulya123/dataquad/', registryCredential ) {
             docker.image("${DOCKER_IMAGE_NAME}:latest").push('latest')
           }
         }
