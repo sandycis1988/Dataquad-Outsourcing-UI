@@ -161,7 +161,7 @@ const JobForm = () => {
             type: "number",
           },
           { name: "qualification", label: "Qualification", type: "text" },
-          { name: "remark", label: "Remark", type: "text" },
+          
         ].map((field) => (
           <Grid item xs={12} sm={6} md={3} key={field.name}>
             <TextField
@@ -256,7 +256,8 @@ const JobForm = () => {
                     boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)", // Add shadow
                     "& .MuiMenuItem-root": {
                       padding: "10px 16px", // Adjust padding for each option
-                      fontSize: "0.9rem", // Adjust font size
+                      fontSize: "0.9rem", 
+                      borderRadius: "10px",
                       "&:hover": {
                         backgroundColor: theme.palette.action.hover, // Highlight on hover
                       },
@@ -269,7 +270,7 @@ const JobForm = () => {
                       },
                     },
                   },
-                },
+                },  
               }}
             >
               {fetchStatus === "loading" ? (
@@ -291,7 +292,7 @@ const JobForm = () => {
         </Grid>
 
         {/* Job Description Field */}
-        <Grid item xs={12}>
+        <Grid item xs={12}  md={6}>
           <TextField
             fullWidth
             variant="filled"

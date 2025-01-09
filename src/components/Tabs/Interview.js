@@ -106,12 +106,14 @@ const Interview = () => {
   const formatDateTime = (dateTime) => {
     if (!dateTime) return "";
     try {
-      return new Date(dateTime).toLocaleString("en-US", {
+      return new Date(dateTime).toLocaleString("en-IN", {
         year: "numeric",
         month: "short",
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true, // Use 12-hour format
+        timeZone: "Asia/Kolkata",
       });
     } catch (error) {
       return "";
@@ -124,7 +126,7 @@ const Interview = () => {
       case "interviewScheduledTimestamp":
         return formatDateTime(row[header]);
       case "duration":
-        return row[header] ? `${row[header]} minutes` : ""; // Return an empty string instead of 'N/A'
+        return row[header] ? `${row[header]} minutes` : ""; 
       case "zoomLink":
         return row[header] ? (
           <Button
@@ -223,7 +225,7 @@ const Interview = () => {
     </Box>
   );
 
-  // Ensure filteredData is not empty and pagination doesn't throw NaN
+  // Ensure filteredData is not empty and pagination doesn't throw NaN4
   const totalFilteredDataCount = filteredData.length;
   const totalPages = Math.ceil(totalFilteredDataCount / rowsPerPage);
 
@@ -281,7 +283,7 @@ const Interview = () => {
             pl: 1,
             borderBottom: 1,
             borderColor: "divider",
-            flexShrink: 0, // Prevent header from shrinking
+            flexShrink: 0, 
             backgroundColor: "rgba(232, 245, 233)",
             padding: 1,
             borderRadius: 1,

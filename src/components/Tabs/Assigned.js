@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ReusableTable from "../ReusableTable";
 import { Link } from "react-router-dom";
-import { useSelector } from 'react-redux';// Added import
+import { useSelector } from 'react-redux';
 import {
   CircularProgress,
   Box,
@@ -17,6 +17,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import CandidateSubmissionForm from "../CandidateSubmissionFrom";
 import BASE_URL from "../../redux/apiConfig";
+import UploadIcon from '@mui/icons-material/Upload';
+import CustomDialog from "../MuiComponents/CustomDialog";
 
 const Assigned = () => {
   const [data, setData] = useState([]);
@@ -129,9 +131,16 @@ const Assigned = () => {
         <Link
           to="#"
           onClick={() => handleOpenSubmitDialog(row["jobId"])} // Open Submit Dialog
-          style={{ color: "blue", cursor: "pointer" }}
+          style={{
+            color: "blue",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px", // Adjust spacing between text and icon
+          }}
         >
           {row[header]}
+          <UploadIcon fontSize="small" />
         </Link>
       );
     }
@@ -181,6 +190,20 @@ const Assigned = () => {
       </Box>
     );
   }
+  if (fetchStatus === "loading") {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -196,7 +219,7 @@ const Assigned = () => {
       />
 
       {/* Dialog for Submit Candidate */}
-      <Dialog
+      {/* <Dialog
         open={openSubmitDialog}
         onClose={handleCloseSubmitDialog}
         maxWidth="md"
@@ -236,10 +259,23 @@ const Assigned = () => {
             userEmail={employeeEmail} // Dynamically fetched email
           />
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
+      {/* Submit Candidate Dialog */}
+      <CustomDialog
+        open={openSubmitDialog}
+        onClose={handleCloseSubmitDialog}
+        title="Candidate Submission Form"
+        content={
+          <CandidateSubmissionForm
+            jobId={selectedJobForSubmit}
+            userId={user}
+            userEmail={employeeEmail}
+          />
+        }
+      />
 
       {/* Dialog for Job Description */}
-      <Dialog
+      {/* <Dialog
         open={openDescriptionDialog}
         onClose={handleCloseDescriptionDialog}
         maxWidth="sm"
@@ -262,7 +298,15 @@ const Assigned = () => {
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
+
+      {/* Job Description Dialog */}
+      <CustomDialog
+        open={openDescriptionDialog}
+        onClose={handleCloseDescriptionDialog}
+        title="Job Description"
+        content={<Typography>{selectedJobDescription}</Typography>}
+      />
     </>
   );
 };
