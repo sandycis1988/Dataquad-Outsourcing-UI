@@ -1,8 +1,8 @@
 pipeline {
   environment {
-    imagename = "mulya123/dataquad"
     registryCredential = 'docker-hub'
     DOCKER_IMAGE_NAME = 'react-app'
+    registry = "sandycis476/dataquad"
   }
   agent any
   stages {
@@ -22,7 +22,7 @@ pipeline {
     stage('Deploy Image') {
       steps{
         script {
-          docker.withRegistry( 'https://hub.docker.com/repository/docker/mulya123/dataquad/', registryCredential ) {
+          docker.withRegistry( '', registryCredential ) {
             docker.image("${DOCKER_IMAGE_NAME}:latest").push('latest')
           }
         }
